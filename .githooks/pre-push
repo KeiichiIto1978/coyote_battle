@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+set -eu
+
+repository_root="$(git rev-parse --show-toplevel)"
+
+# pushされる変更を、CIと同じ品質ゲート契約で事前検証する。
+exec bash "$repository_root/scripts/quality-gate.sh" all

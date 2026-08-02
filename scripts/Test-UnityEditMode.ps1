@@ -115,7 +115,7 @@ try
         (ConvertTo-QuotedArgument $logPath)
     )
 
-    Write-Host "Unity EditModeテストを実行します: $resolvedUnityPath"
+    Write-Output "Unity EditModeテストを実行します: $resolvedUnityPath"
     $unityProcess = Start-Process `
         -FilePath $resolvedUnityPath `
         -ArgumentList $unityArguments `
@@ -155,8 +155,8 @@ try
         throw "EditModeテストが失敗しました（成功: $passed、失敗: $failed）。結果: $resultPath"
     }
 
-    Write-Host "EditModeテスト成功（成功: $passed、失敗: $failed）"
-    Write-Host "結果: $resultPath"
+    Write-Output "EditModeテスト成功（成功: $passed、失敗: $failed）"
+    Write-Output "結果: $resultPath"
     exit 0
 }
 catch
