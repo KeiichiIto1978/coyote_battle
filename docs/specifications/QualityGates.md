@@ -10,7 +10,7 @@ push前とPull Request時に同じ検査契約を使い、整形漏れ、規約�
 - pre-pushはGit標準hookを使う。Node.js依存を追加するHuskyと、追加バイナリを必要とするLefthookは採用しない。
 - PowerShellはWindows版Unity Editorを起動する既存スクリプトだけに限定し、静的検査やhookの必須基盤にしない。
 - CIは安価な静的検査を先に実行し、失敗時はUnityテストを開始しない。
-- Unity関連ファイルに変更がないPull RequestではUnityテストを省略する。手動実行では常に実行する。
+- Unity関連ファイルと品質ゲートworkflowに変更がないPull RequestではUnityテストを省略する。手動実行では常に実行する。
 
 ## 共通コマンド
 

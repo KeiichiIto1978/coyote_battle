@@ -68,7 +68,8 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo 'run-unity=true' >> "$GITHUB_OUTPUT"
-          elif git diff --quiet "origin/${{ github.base_ref }}...HEAD" -- Assets Packages ProjectSettings; then
+          elif git diff --quiet "origin/${{ github.base_ref }}...HEAD" -- \
+            Assets Packages ProjectSettings .github/workflows/quality-gates.yml; then
             echo 'run-unity=false' >> "$GITHUB_OUTPUT"
           else
             echo 'run-unity=true' >> "$GITHUB_OUTPUT"
