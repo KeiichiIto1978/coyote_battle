@@ -2,6 +2,7 @@ name: Quality Gates
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
 permissions:
@@ -12,17 +13,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  static-analysis:
-    name: Static Analysis
+  quality-gates:
+    name: Quality Gates
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    outputs:
-      run-unity: ${{ steps.changes.outputs.run-unity }}
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
@@ -61,91 +58,10 @@ jobs:
         run: |
           bash scripts/tests/quality-gate-tests.sh
           bash scripts/tests/git-hook-tests.sh
+          bash scripts/tests/pr-test-evidence-tests.sh
 
-      - name: Detect Unity changes
-        id: changes
-        shell: bash
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo 'run-unity=true' >> "$GITHUB_OUTPUT"
-          elif git diff --quiet "origin/${{ github.base_ref }}...HEAD" -- \
-            Assets Packages ProjectSettings .github/workflows/quality-gates.yml; then
-            echo 'run-unity=false' >> "$GITHUB_OUTPUT"
-          else
-            echo 'run-unity=true' >> "$GITHUB_OUTPUT"
-          fi
-
-  unity-editmode:
-    name: Unity EditMode
-    needs: static-analysis
-    if: >-
-      needs.static-analysis.outputs.run-unity == 'true' &&
-      (github.event_name == 'workflow_dispatch' ||
-      github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-      UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-      UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-      UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-
-      - name: Read Unity version
-        id: unity-version
-        shell: bash
-        run: |
-          version="$(sed -n 's/^m_EditorVersion: //p' ProjectSettings/ProjectVersion.txt)"
-          test -n "$version"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-
-      - name: Restore Unity Library cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: Library
-          key: >-
-            ${{ runner.os }}-unity-${{ steps.unity-version.outputs.version }}-
-            ${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
-          restore-keys: |
-            ${{ runner.os }}-unity-${{ steps.unity-version.outputs.version }}-
-
-      - name: Run EditMode tests
-        uses: game-ci/unity-test-runner@0ff419b913a3630032cbe0de48a0099b5a9f0ed9 # v4
-        with:
-          projectPath: .
-          unityVersion: auto
-          testMode: editmode
-          artifactsPath: artifacts
-
-      - name: Upload test results and logs
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: unity-editmode-${{ github.run_attempt }}
-          path: |
-            artifacts
-            Logs
-          if-no-files-found: warn
-          retention-days: 14
-
-  quality-gates:
-    name: Quality Gates
-    if: always()
-    needs:
-      - static-analysis
-      - unity-editmode
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Verify required jobs
+      - name: Verify local EditMode evidence
+        if: github.event_name == 'pull_request'
         env:
-          STATIC_RESULT: ${{ needs.static-analysis.result }}
-          UNITY_RESULT: ${{ needs.unity-editmode.result }}
-          UNITY_REQUIRED: ${{ needs.static-analysis.outputs.run-unity }}
-        run: |
-          test "$STATIC_RESULT" = 'success'
-          if test "$UNITY_REQUIRED" = 'true'; then
-            test "$UNITY_RESULT" = 'success'
-          fi
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: bash scripts/validate-pr-test-evidence.sh
