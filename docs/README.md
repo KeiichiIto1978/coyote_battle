@@ -10,6 +10,10 @@
 - `decisions/`: 重要な設計判断と理由を記録するADR
 - Pull Request: Issueで合意した内容の実装と、コード・文書をまとめたレビュー
 
+## 現在の仕様書
+
+- [品質ゲート](specifications/QualityGates.md): formatter、lint、pre-push、CI、Unity EditModeテストの運用
+
 ## 基本方針
 
 Issueごとの仕様書は作りません。Issue単位で文書を作ると、同じ機能の情報が複数ファイルへ分散し、現在の正しい仕様を探しにくくなるためです。

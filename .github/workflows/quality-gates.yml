@@ -1,0 +1,67 @@
+name: Quality Gates
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gates-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: 9.0.x
+          cache: true
+          cache-dependency-path: .config/dotnet-tools.json
+
+      - name: Install pinned PSScriptAnalyzer
+        shell: pwsh
+        run: Install-Module PSScriptAnalyzer -RequiredVersion 1.24.0 -Scope CurrentUser -Force
+
+      - name: Install pinned ShellCheck
+        shell: bash
+        run: |
+          archive="$RUNNER_TEMP/shellcheck.tar.xz"
+          curl --fail --location --silent --show-error \
+            'https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz' \
+            --output "$archive"
+          tar -xJf "$archive" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/shellcheck-v0.11.0" >> "$GITHUB_PATH"
+
+      - name: Verify pinned linters
+        run: |
+          shellcheck --version | grep 'version: 0.11.0'
+          pwsh -NoProfile -Command \
+            "if (-not (Get-Module -ListAvailable PSScriptAnalyzer | Where-Object Version -eq '1.24.0')) { exit 1 }"
+
+      - name: Run formatter check
+        run: bash scripts/quality-gate.sh format-check
+
+      - name: Run lint
+        run: bash scripts/quality-gate.sh lint
+
+      - name: Test quality gate
+        run: |
+          bash scripts/tests/quality-gate-tests.sh
+          bash scripts/tests/git-hook-tests.sh
+          bash scripts/tests/pr-test-evidence-tests.sh
+
+      - name: Verify local EditMode evidence
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: bash scripts/validate-pr-test-evidence.sh

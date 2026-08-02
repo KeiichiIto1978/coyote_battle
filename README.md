@@ -25,7 +25,7 @@
 - UI とゲームロジックを分離
 - NUnit と Unity Test Framework によるテスト駆動開発
 - `.editorconfig` による基本的なコードスタイルの統一
-- GitHub Actions などを用いた CI は今後整備
+- Git標準pre-push hookとGitHub Actionsによる品質ゲート
 
 ## ディレクトリ構成
 
@@ -43,6 +43,27 @@ ProjectSettings/    Unity プロジェクト設定
 docs/               企画・設計ドキュメント
 scripts/            テストやビルドの自動化スクリプト
 ```
+
+## 品質ゲート
+
+Git for WindowsのBashまたはPOSIX shellから、formatter、lint、EditModeテストを個別または一括実行できます。
+
+```bash
+bash scripts/quality-gate.sh format-check
+bash scripts/quality-gate.sh lint
+bash scripts/quality-gate.sh editmode
+bash scripts/quality-gate.sh all
+```
+
+初回clone後に次を実行すると、push前に`all`が自動実行されます。
+
+事前にShellCheck 0.11.0とPSScriptAnalyzer 1.24.0を導入してください。CSharpier 1.3.0は共通コマンドがリポジトリのtool manifestから復元します。
+
+```bash
+bash scripts/install-git-hooks.sh
+```
+
+整形を適用する場合は`bash scripts/quality-gate.sh format-write`を使用します。CI、Unityライセンス、branch protectionの詳細は[品質ゲート仕様](docs/specifications/QualityGates.md)を参照してください。
 
 ## EditModeテスト
 
