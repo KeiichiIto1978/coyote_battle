@@ -1,0 +1,2 @@
+# coyote_battle
+カードゲームのコヨーテをandroidアプリで作る
