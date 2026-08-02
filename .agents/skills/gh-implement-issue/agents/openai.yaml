@@ -1,0 +1,4 @@
+interface:
+  display_name: "Issue実装とPR"
+  short_description: "リファイン済みIssueをTDDで実装してPRを起票します"
+  default_prompt: "Use $gh-implement-issue to implement this issue and open a pull request."

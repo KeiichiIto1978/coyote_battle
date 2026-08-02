@@ -1,0 +1,81 @@
+name: 開発Issue
+description: 機能、不具合、改善、リファクタリングなどの開発項目
+title: "[種別] "
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: 種別
+      options:
+        - 機能追加
+        - 不具合修正
+        - 改善
+        - リファクタリング
+        - テスト
+        - 依存関係・設定
+        - ドキュメント
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: 概要
+      description: 何を実現または解決するIssueかを簡潔に記載してください。
+    validations:
+      required: true
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景・目的
+      description: なぜ必要か、利用者にどのような価値があるかを記載してください。
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 対象範囲
+      description: このIssueで変更する範囲を記載してください。
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: 対象外
+      description: 意図的に扱わない内容を記載してください。
+  - type: textarea
+    id: design
+    attributes:
+      label: 詳細設計
+      description: 状態、処理、入出力、制約、例外などを記載してください。未確定なら「要リファインメント」としてください。
+    validations:
+      required: true
+  - type: textarea
+    id: test_cases
+    attributes:
+      label: テストケース
+      description: 正常系、異常系、境界値を箇条書きで記載してください。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: 受け入れ条件
+      description: 完了を第三者が判定できるチェックリストにしてください。
+      placeholder: |
+        - [ ] 条件1
+        - [ ] 条件2
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: 実装タスク
+      description: リファインメント後、依存順のチェックリストに更新してください。
+      placeholder: |
+        - [ ] タスク1
+        - [ ] タスク2
+  - type: textarea
+    id: notes
+    attributes:
+      label: 制約・関連情報・未決事項
+      description: 関連Issue、仕様書、参考資料、技術的制約、確認事項を記載してください。

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Issueリファインメント"
+  short_description: "Issueを詳細設計とテスト可能な実装タスクまで具体化します"
+  default_prompt: "Use $gh-refine-issue to refine this issue into an implementation-ready plan."

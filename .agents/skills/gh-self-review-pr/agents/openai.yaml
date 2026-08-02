@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR自己レビュー"
+  short_description: "PRを批判的に検証して不具合やテスト不足を発見します"
+  default_prompt: "Use $gh-self-review-pr to critically review this pull request."
