@@ -75,6 +75,17 @@ body:
         - [ ] タスク1
         - [ ] タスク2
   - type: textarea
+    id: dependencies
+    attributes:
+      label: 依存関係
+      description: Blocked by、Blocks、RelatedをIssue番号とともに記載してください。依存がなければ「なし」としてください。
+      placeholder: |
+        - Blocked by #123
+        - Blocks #125
+        - Related #130
+    validations:
+      required: true
+  - type: textarea
     id: notes
     attributes:
       label: 制約・関連情報・未決事項

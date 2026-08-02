@@ -1,4 +1,4 @@
 interface:
   display_name: "Issue起票"
-  short_description: "開発依頼を重複のない構造化Issueとして整理して起票します"
-  default_prompt: "Use $gh-create-issue to turn my request into a structured GitHub issue."
+  short_description: "開発依頼を適切な単位へ分割して構造化Issueとして起票します"
+  default_prompt: "Use $gh-create-issue to split my request into appropriately scoped GitHub issues and create them."
