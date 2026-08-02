@@ -1,0 +1,6 @@
+{
+  "name": "CoyoteBattle.Domain",
+  "rootNamespace": "CoyoteBattle.Domain",
+  "autoReferenced": true
+}
+
