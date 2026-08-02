@@ -56,13 +56,9 @@ Pull Requestと手動実行で`.github/workflows/quality-gates.yml`を実行す�
 
 Unity Personalはオフラインライセンスファイルの内容を`UNITY_LICENSE`へ登録する。Unity Proは`UNITY_EMAIL`、`UNITY_PASSWORD`、`UNITY_SERIAL`をRepository Secretsへ登録する。Secret値や有無をログへ出力しない。
 
-Unity 6ではPersonalの手動アクティベーションが公式サポート外である。`request-unity-personal-license.yml`はGameCIの旧方式を検証するための実験的workflowとし、次の制約を受け入れた場合だけ手動実行する。
+Unity 6ではPersonalの手動アクティベーションが公式サポート外である。GameCIの旧`unity-request-activation-file@v2`も実行時に`This action is no longer supported`として停止し、`.alf`を生成できないことを2026-08-02に確認した。このため旧方式は採用せず、DOM変更などによる制限回避も行わない。
 
-1. workflowのArtifactから`.alf`を取得する。
-2. `https://license.unity3d.com/`へ`.alf`をアップロードする。
-3. Personalを正規の画面操作で選択でき、`.ulf`を取得できた場合だけ、その内容全体を`UNITY_LICENSE`へ登録する。
-4. Personalの選択肢が表示されない場合、ブラウザーのDOM変更などで制限を迂回せず検証を中止する。
-5. `.alf`、`.ulf`、Unityアカウント情報をリポジトリへ保存しない。
+Personal運用では、GitHub-hosted runner上のUnityテストを必須化できる公式方式が確認できるまで、ローカルpre-pushでEditModeテストを実行する。GitHub ActionsのUnity jobの扱いはPR #4で最終決定する。
 
 forkからのPull RequestにはRepository Secretsが渡らない。Unity変更を含むfork PRは集約jobを失敗させ、管理者が安全なブランチへ取り込んで再検証する。
 
