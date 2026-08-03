@@ -13,7 +13,7 @@ fail() {
 # リポジトリ配下から生成物を除外し、検査対象をNUL区切りで返す。
 collect_files() {
     find "$repository_root" \
-        -type d \( -name .git -o -name Library -o -name Logs -o -name Temp -o -name TestResults \) -prune -o \
+        -type d \( -name .git -o -name .utmp -o -name Library -o -name Logs -o -name Temp -o -name TestResults \) -prune -o \
         -type f -print0
 }
 
