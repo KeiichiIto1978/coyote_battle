@@ -1,4 +1,3 @@
-using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
@@ -20,11 +19,23 @@ namespace CoyoteBattle.Domain.Tests
                 Is.Not.Empty,
                 "ビルド対象のシーンを1件以上登録してください。"
             );
-            Assert.That(
-                enabledScenes.All(scene => File.Exists(scene.path)),
-                Is.True,
-                "登録されたビルド対象シーンが存在しません。"
-            );
+            foreach (var scene in enabledScenes)
+            {
+                var sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(scene.path);
+                var registeredGuid = scene.guid.ToString();
+                var assetGuid = AssetDatabase.AssetPathToGUID(scene.path);
+
+                Assert.That(
+                    sceneAsset,
+                    Is.Not.Null,
+                    $"ビルド対象をSceneAssetとして読み込めません: {scene.path}"
+                );
+                Assert.That(
+                    registeredGuid,
+                    Is.EqualTo(assetGuid),
+                    $"Build SettingsとSceneAssetのGUIDが一致しません: {scene.path}"
+                );
+            }
         }
     }
 }

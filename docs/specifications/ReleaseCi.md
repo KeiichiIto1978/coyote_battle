@@ -40,7 +40,7 @@
 
 Android Playerのビルド起点として`Assets/CoyoteBattle/Scenes/Bootstrap.unity`をBuild Settingsへ登録する。スケルトン段階の`Bootstrap`は表示やゲーム進行を持たない最小シーンとし、後続機能が起動構成を追加する。有効なビルド対象シーンが0件、または登録先が存在しない状態はEditModeテストで拒否する。
 
-Dashboard上の設定には秘密情報を記録しない。GitHub接続用PATは`coyote_battle`だけを対象とし、`Contents: Read-only`と`Webhooks: Read and write`だけを付与する。PATの値はリポジトリ、Issue、ログへ残さない。
+Dashboard上の設定には秘密情報を記録しない。GitHub接続にはPATを使用し、UBAから`KeiichiIto1978/coyote_battle`を選択して取得できることを確認する。PATの値はリポジトリ、Issue、ログへ残さない。権限範囲の見直しは本Issueの対象外とし、この仕様書では実際に確認していない最小権限を設定済みとして扱わない。
 
 ## 費用管理
 
@@ -75,7 +75,7 @@ UBAのBuild詳細で次を確認する。
 
 Build #1ではGitHubから`release`を取得してUnityを起動できたが、Build Settingsの対象シーンが0件だったため`There were no scenes configured to build!`で失敗した。この失敗はVCS認証やUnityライセンスではなく、リポジトリ側のビルド設定不備として扱う。
 
-再発防止として、EditModeテストで有効なシーンが1件以上あり、各シーンファイルが存在することを検証する。UBAの再実行は修正commitが`release`へ反映された後に行い、失敗した同一commitを設定変更なしで繰り返し実行しない。
+再発防止として、EditModeテストで有効なシーンが1件以上あり、各シーンをUnityが`SceneAsset`として認識でき、Build SettingsとアセットのGUIDが一致することを検証する。UBAの再実行は修正commitが`release`へ反映された後に行い、失敗した同一commitを設定変更なしで繰り返し実行しない。
 
 ## 制約
 
