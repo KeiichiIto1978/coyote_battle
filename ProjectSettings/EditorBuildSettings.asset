@@ -4,6 +4,9 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/CoyoteBattle/Scenes/Bootstrap.unity
+    guid: 778819a375fc4707bdc6747231d79137
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
