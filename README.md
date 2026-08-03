@@ -27,6 +27,15 @@
 - `.editorconfig` による基本的なコードスタイルの統一
 - Git標準pre-push hookとGitHub Actionsによる品質ゲート
 
+## Unity Editor
+
+- 使用バージョン: Unity `6000.3.21f1`（Unity 6.3 LTS）
+- Unity HubではAndroid Build Support、Android SDK & NDK Tools、OpenJDKを追加する
+- Unityは`ProjectSettings/ProjectVersion.txt`からバージョンを自動検出する
+- 更新前の`6000.1.0f1`は、更新PRとUBA検証が完了するまでロールバック用に残す
+
+Editor更新とロールバックの詳細は[Unity Editor運用仕様](docs/specifications/UnityEditor.md)を参照してください。
+
 ## ディレクトリ構成
 
 ```text
@@ -116,6 +125,35 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-UnityEditMode
 - `TestResults/EditMode.xml`: NUnit形式のテスト結果
 - `TestResults/EditMode.log`: Unityの実行ログ
 
+## Android Developmentビルド
+
+Unity 6.3のAndroid Toolsは、プロジェクトパスに日本語などの非ASCII文字が含まれるとビルドできません。現在の配置では、一時的にASCIIのみのドライブへ割り当てて実行します。
+
+```powershell
+$createdMapping = $false
+if (subst | Select-String '^U:') {
+  throw 'U: は既に使用されています。未使用のドライブ文字へ置き換えてください。'
+}
+try {
+  subst U: "$PWD"
+  if ($LASTEXITCODE -ne 0) {
+    throw '一時ドライブの割り当てに失敗しました。'
+  }
+  $createdMapping = $true
+  powershell -NoProfile -ExecutionPolicy Bypass `
+    -File U:\scripts\Build-AndroidDevelopment.ps1 `
+    -ProjectPath U:\
+} finally {
+  if ($createdMapping) {
+    subst U: /D
+  }
+}
+```
+
+スクリプトはEditorとAndroid SDK・NDK・JDKを検出し、以前のAPKを削除してから、Development APKの終了コード、更新日時、ファイルサイズを検証します。ASCIIだけで構成された空白入りパスにも対応します。
+
+成果物は`Builds/Android/CoyoteBattle-development.apk`、ログは`Logs/AndroidDevelopmentBuild.log`へ出力され、Gitの管理対象には含まれません。
+
 ## 開発状況
 
-現在はスケルトンプロジェクトの段階です。必要パッケージ、ローカル実行、Android ビルドの具体的な手順は、開発環境の確定に合わせて本 README に追記します。
+現在はスケルトンプロジェクトの段階です。ゲーム本編の実装に合わせて、実機での主要ゲームフロー確認と配布手順を追記します。
