@@ -82,4 +82,4 @@ Build #1ではGitHubから`release`を取得してUnityを起動できたが、B
 - UBAは`release`へのマージ後に起動するため、マージ自体は阻止しない。
 - 初期成果物は自動生成デバッグkeystoreで署名した検証用APKであり、Google Playへ公開しない。
 - 本番署名、AAB、Google Play配布は、秘密鍵の保管・権限・ローテーションを別途設計してから導入する。
-- Unity 6000.1.0f1は2026-08-03時点でUBAの廃止予定警告が表示されるため、対応バージョンへの更新を別Issueで管理する。
+- Unity Editorは`ProjectSettings/ProjectVersion.txt`で指定した`6000.3.21f1`を完全一致で使用する。`Build with closest version`は有効化しない。
