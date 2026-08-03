@@ -26,9 +26,9 @@ Editor更新に不要なPackage更新、`Library/`、`Logs/`、`TestResults/`、
 - EditModeテストの終了コードが0で、テストが1件以上実行され、失敗が0件であること。
 - コンパイルエラーと未解決のPackageエラーがないこと。
 - `Assets/CoyoteBattle/Scenes/Bootstrap.unity`が有効なビルド対象として読み込めること。
-- Android Development APKが生成され、ファイルサイズが0より大きいこと。
+- Android Development APKの既存ファイルを成功扱いせず、現在の実行で更新された非空ファイルが生成されること。
 
-Android Toolsは非ASCII文字を含むプロジェクトパスを拒否する。該当する環境では、READMEの手順でworktreeを一時的なASCIIドライブへ割り当てる。割り当てはビルド後に必ず解除する。
+Android Toolsは非ASCII文字を含むプロジェクトパスを拒否する。該当する環境では、READMEの手順でworktreeを未使用の一時ASCIIドライブへ割り当てる。既存の割り当てを上書きせず、この手順で作成した割り当てだけをビルド後に解除する。ビルドスクリプトはASCIIだけで構成された空白入りパスも正しく引用してUnityへ渡す。
 
 ## UBA検証
 

@@ -130,17 +130,27 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-UnityEditMode
 Unity 6.3のAndroid Toolsは、プロジェクトパスに日本語などの非ASCII文字が含まれるとビルドできません。現在の配置では、一時的にASCIIのみのドライブへ割り当てて実行します。
 
 ```powershell
-subst U: "$PWD"
+$createdMapping = $false
+if (subst | Select-String '^U:') {
+  throw 'U: は既に使用されています。未使用のドライブ文字へ置き換えてください。'
+}
 try {
+  subst U: "$PWD"
+  if ($LASTEXITCODE -ne 0) {
+    throw '一時ドライブの割り当てに失敗しました。'
+  }
+  $createdMapping = $true
   powershell -NoProfile -ExecutionPolicy Bypass `
     -File U:\scripts\Build-AndroidDevelopment.ps1 `
     -ProjectPath U:\
 } finally {
-  subst U: /D
+  if ($createdMapping) {
+    subst U: /D
+  }
 }
 ```
 
-`U:`が使用中の場合は、未使用のドライブ文字へ置き換えてください。スクリプトはEditorとAndroid SDK・NDK・JDKを検出し、Development APKの終了コードとファイルサイズを検証します。
+スクリプトはEditorとAndroid SDK・NDK・JDKを検出し、以前のAPKを削除してから、Development APKの終了コード、更新日時、ファイルサイズを検証します。ASCIIだけで構成された空白入りパスにも対応します。
 
 成果物は`Builds/Android/CoyoteBattle-development.apk`、ログは`Logs/AndroidDevelopmentBuild.log`へ出力され、Gitの管理対象には含まれません。
 

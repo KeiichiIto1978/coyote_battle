@@ -69,6 +69,19 @@ function Assert-AndroidModule
     }
 }
 
+function ConvertTo-QuotedArgument
+{
+    param([string]$Value)
+
+    $normalizedValue = $Value
+    if ($normalizedValue -match '^[A-Za-z]:\\$')
+    {
+        $normalizedValue += '.'
+    }
+
+    return '"' + $normalizedValue.Replace('"', '\"') + '"'
+}
+
 try
 {
     $resolvedProjectPath = Get-ProjectPath -RequestedPath $ProjectPath
@@ -89,15 +102,22 @@ try
     $logPath = Join-Path $resolvedProjectPath 'Logs\AndroidDevelopmentBuild.log'
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $logPath) | Out-Null
 
+    if (Test-Path -LiteralPath $resolvedOutputPath -PathType Leaf)
+    {
+        Remove-Item -LiteralPath $resolvedOutputPath -Force
+    }
+
+    $buildStartedAt = [DateTime]::UtcNow
+
     $arguments = @(
         '-batchmode',
         '-nographics',
         '-quit',
-        '-projectPath', $resolvedProjectPath,
+        '-projectPath', (ConvertTo-QuotedArgument -Value $resolvedProjectPath),
         '-buildTarget', 'Android',
         '-executeMethod', 'CoyoteBattle.Editor.AndroidDevelopmentBuilder.Build',
-        '-androidOutputPath', $resolvedOutputPath,
-        '-logFile', $logPath
+        '-androidOutputPath', (ConvertTo-QuotedArgument -Value $resolvedOutputPath),
+        '-logFile', (ConvertTo-QuotedArgument -Value $logPath)
     )
     $process = Start-Process -FilePath $resolvedUnityPath -ArgumentList $arguments -PassThru
     if (-not $process.WaitForExit($TimeoutSeconds * 1000))
@@ -115,6 +135,11 @@ try
     if ($apk.Length -le 0)
     {
         throw "Generated APK is empty: $resolvedOutputPath"
+    }
+
+    if ($apk.LastWriteTimeUtc -lt $buildStartedAt)
+    {
+        throw "Generated APK was not updated by the current build: $resolvedOutputPath"
     }
 
     Write-Output "Android Development APK succeeded ($($apk.Length) bytes)."
