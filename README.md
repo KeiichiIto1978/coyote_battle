@@ -32,6 +32,8 @@
 ```text
 Assets/
   CoyoteBattle/
+    Scenes/
+      Bootstrap.unity  Androidビルドの起点となる最小シーン
     Scripts/
       Domain/       UIやUnityのライフサイクルに依存しないゲームロジック
       Application/  ゲーム進行とユースケース（今後追加）
@@ -64,6 +66,16 @@ bash scripts/install-git-hooks.sh
 ```
 
 整形を適用する場合は`bash scripts/quality-gate.sh format-write`を使用します。CI、Unityライセンス、branch protectionの詳細は[品質ゲート仕様](docs/specifications/QualityGates.md)を参照してください。
+
+## リリースCI
+
+通常のPull Requestでは、GitHub Actionsによるformatter・lintと、ローカルpre-pushによるEditModeテストを実行します。クラウドでのUnityテストとAndroid APKビルドは、保護された`release`ブランチが更新された場合だけUnity Build Automationで実行します。
+
+リリース候補は`main`から`release`へのPull Requestで作成します。`release`への直接push、force push、削除は禁止し、`Quality Gates`を必須チェックとします。Unity Build Automationが成功した成果物だけをリリース候補として扱います。
+
+Build Automationの設定値、無料枠、失敗時の復旧方法は[リリースCI仕様](docs/specifications/ReleaseCi.md)を参照してください。
+
+Androidビルド対象には`Assets/CoyoteBattle/Scenes/Bootstrap.unity`を登録しています。ゲーム画面は今後この起点から構成し、Build Settingsから有効なシーンをすべて外さないでください。
 
 ## EditModeテスト
 
