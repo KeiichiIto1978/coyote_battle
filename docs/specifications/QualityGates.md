@@ -22,6 +22,8 @@ push前とPull Request時に同じ検査契約を使い、整形漏れ、規約�
 | `editmode` | ローカルUnity EditModeテスト |
 | `all` | 上記の確認系をfail-fastで実行 |
 
+EditModeテスト結果XMLはUTF-8として読み取り、日本語のテスト名を含む成功件数を集計する。
+
 実行例は次のとおり。
 
 ```bash
