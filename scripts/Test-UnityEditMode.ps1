@@ -139,7 +139,7 @@ try
         throw "テスト結果が生成されませんでした。ログ: $logPath"
     }
 
-    [xml]$testResult = Get-Content -Raw -LiteralPath $resultPath
+    [xml]$testResult = Get-Content -Raw -Encoding UTF8 -LiteralPath $resultPath
     $testRun = $testResult.'test-run'
     $total = [int]$testRun.total
     $failed = [int]$testRun.failed
