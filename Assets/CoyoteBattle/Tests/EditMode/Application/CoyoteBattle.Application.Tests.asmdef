@@ -1,0 +1,15 @@
+{
+  "name": "CoyoteBattle.Application.Tests",
+  "rootNamespace": "CoyoteBattle.Application.Tests",
+  "references": [
+    "CoyoteBattle.Application",
+    "CoyoteBattle.Domain"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": false
+}
