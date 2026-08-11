@@ -74,6 +74,26 @@ namespace CoyoteBattle.Presentation
             element.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Cover);
         }
 
+        /// <summary>
+        /// ルートと既存の全テキスト要素に同梱フォントを適用します。
+        /// </summary>
+        /// <param name="root">フォントを継承させるUIルートです。</param>
+        /// <param name="font">日本語表示に使用する同梱フォントです。</param>
+        internal static void ApplyFont(VisualElement root, Font font)
+        {
+            if (font == null)
+            {
+                Debug.LogError("UI用フォント NotoSansJP を読み込めませんでした。");
+                return;
+            }
+
+            var definition = new StyleFontDefinition(FontDefinition.FromFont(font));
+            root.style.unityFontDefinition = definition;
+            root.Query<TextElement>().ForEach(element =>
+                element.style.unityFontDefinition = definition
+            );
+        }
+
         internal static string AvatarResource(string id)
         {
             switch (id)

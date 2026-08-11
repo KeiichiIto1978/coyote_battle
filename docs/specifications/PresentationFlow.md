@@ -8,6 +8,8 @@ Android端末でNPC4名とのゲームを開始し、宣言、判定、次ラウ
 
 - 単一の`Bootstrap`シーンでTitle、Battle、RoundResult、GameOverを切り替える。
 - UI ToolkitのランタイムUIを使用し、基準解像度を1920×1080とする。
+- 日本語表示はプロジェクトへ同梱したNoto Sans JPを全TextElementへ明示適用し、OSフォントへ依存しない。
+- UI ToolkitのデフォルトテーマをPanelSettingsに設定し、ボタンと入力欄を実行環境で正しく描画する。
 - 画面は横向きに固定し、Presentationが`Screen.safeArea`を基準解像度へ換算して余白へ反映する。
 - 1280×720、1920×1080、2400×1080を検証対象とする。
 - 背景、NPC4名、カード表面8種、カード裏面、エンブレムは`Assets/CoyoteBattle/Resources/Art`の画像を使用する。
@@ -54,6 +56,8 @@ Android端末でNPC4名とのゲームを開始し、宣言、判定、次ラウ
 ## 画像素材
 
 画像素材はAI画像生成で作成した同一画風のオリジナル素材で、第三者のロゴや文字を含めない。キャラクター素材シートから4名のポートレートを切り出す。カード素材シートから正数、0、負数、夜、×2、MAX→0、？、裏面を切り出し、正確な値と記号はUIテキストとして重ねる。背景は横長のカード卓画像を使用する。
+
+Noto Sans JPはSIL Open Font License 1.1に基づき同梱し、ライセンス本文を`Assets/CoyoteBattle/ThirdPartyNotices/NotoSansJP-OFL.txt`へ収録する。
 
 ## テスト
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Linq;
 using CoyoteBattle.Application;
@@ -41,6 +42,8 @@ namespace CoyoteBattle.Presentation
         private bool _initialized;
         private Rect _lastSafeArea;
         private Font _interfaceFont;
+        private ThemeStyleSheet _themeStyleSheet;
+        private Func<GameFlowService> _gameFactory = CreateGame;
 
         /// <summary>
         /// Unityライフサイクルから画面を初期化します。
@@ -51,19 +54,17 @@ namespace CoyoteBattle.Presentation
         }
 
         /// <summary>
-        /// PlayModeテストから通常と同じComposition Rootを明示初期化します。
+        /// PlayModeテストで再現可能なゲーム生成方法を初期化前に設定します。
         /// </summary>
-        public void InitializeForTests()
+        /// <param name="gameFactory">コントローラーが利用するゲーム生成方法です。</param>
+        internal void ConfigureForTests(Func<GameFlowService> gameFactory)
         {
-            Initialize();
-        }
+            if (_initialized)
+            {
+                throw new InvalidOperationException("初期化後にゲーム生成方法は変更できません。");
+            }
 
-        /// <summary>
-        /// PlayModeテストでボタン操作と同じ開始処理を実行します。
-        /// </summary>
-        public void StartGameForTests()
-        {
-            StartNewGame();
+            _gameFactory = gameFactory ?? throw new ArgumentNullException(nameof(gameFactory));
         }
 
         private void Initialize()
@@ -76,21 +77,14 @@ namespace CoyoteBattle.Presentation
             _initialized = true;
             Screen.orientation = ScreenOrientation.LandscapeLeft;
             PresentationRenderingCamera.EnsureExists();
-            _game = CreateGame();
+            _game = _gameFactory();
             _document = GetComponent<UIDocument>() ?? gameObject.AddComponent<UIDocument>();
-            _document.panelSettings = CreatePanelSettings();
+            _themeStyleSheet = Resources.Load<ThemeStyleSheet>("DefaultRuntimeTheme");
+            _document.panelSettings = CreatePanelSettings(_themeStyleSheet);
             _root = _document.rootVisualElement;
-            _interfaceFont = Font.CreateDynamicFontFromOSFont(
-                new[] { "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic UI", "Arial" },
-                32
-            );
-            if (_interfaceFont != null)
-            {
-                _root.style.unityFontDefinition = new StyleFontDefinition(
-                    FontDefinition.FromFont(_interfaceFont)
-                );
-            }
+            _interfaceFont = Resources.Load<Font>("Fonts/NotoSansJP");
             BuildUi();
+            ApplyFont(_root, _interfaceFont);
             ShowTitle();
             ApplySafeArea();
         }
@@ -109,19 +103,16 @@ namespace CoyoteBattle.Presentation
             {
                 Destroy(_document.panelSettings);
             }
-            if (_interfaceFont != null)
-            {
-                Destroy(_interfaceFont);
-            }
         }
         private static GameFlowService CreateGame()
         {
             return new GameFlowService(new SystemRandomSource(), new SystemRandomSource());
         }
-        private static PanelSettings CreatePanelSettings()
+        private static PanelSettings CreatePanelSettings(ThemeStyleSheet themeStyleSheet)
         {
             var settings = ScriptableObject.CreateInstance<PanelSettings>();
             settings.name = "RuntimePanelSettings";
+            settings.themeStyleSheet = themeStyleSheet;
             settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
             settings.referenceResolution = new Vector2Int(1920, 1080);
             settings.match = 0.5f;
@@ -251,7 +242,7 @@ namespace CoyoteBattle.Presentation
         private void StartNewGame()
         {
             CancelPendingOperations();
-            _game = CreateGame();
+            _game = _gameFactory();
             if (!_game.TryStartNewGame())
             {
                 return;
