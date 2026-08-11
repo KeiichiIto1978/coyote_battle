@@ -1,0 +1,9 @@
+{
+  "name": "CoyoteBattle.Presentation",
+  "rootNamespace": "CoyoteBattle.Presentation",
+  "references": [
+    "CoyoteBattle.Domain",
+    "CoyoteBattle.Application"
+  ],
+  "autoReferenced": true
+}

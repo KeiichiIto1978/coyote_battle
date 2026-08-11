@@ -18,6 +18,7 @@
 - [宣言・ラウンド敗者判定](specifications/DeclarationRules.md): 数字宣言、コヨーテ宣言、履歴、敗者判定
 - [ゲーム進行](specifications/GameFlow.md): ラウンド、手番、判定、脱落、勝敗、再戦、公開状態
 - [NPC判断](specifications/NpcDecisionRules.md): NPC専用観測、合計確率推定、4タイプ、1手実行
+- [画面表示と操作](specifications/PresentationFlow.md): 画面遷移、カード表示、数字入力、NPC自動進行、結果、Safe Area、画像素材
 
 ## 基本方針
 
