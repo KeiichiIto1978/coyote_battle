@@ -20,7 +20,7 @@ namespace CoyoteBattle.Application.Tests
 
         internal static GameFlowService CreateService()
         {
-            return new GameFlowService(new ZeroRandomSource());
+            return new GameFlowService(new ZeroRandomSource(), new ZeroRandomSource());
         }
 
         internal static GameFlowService StartService()
@@ -77,11 +77,14 @@ namespace CoyoteBattle.Application.Tests
                 _firstValue = firstValue;
             }
 
+            internal int CallCount { get; private set; }
+
             /// <summary>
             /// 最初の開始位置だけ指定値を返し、以後のシャッフルを再現可能にします。
             /// </summary>
             public int Next(int exclusiveUpperBound)
             {
+                CallCount++;
                 if (_hasReturnedFirstValue)
                 {
                     return 0;
@@ -92,7 +95,7 @@ namespace CoyoteBattle.Application.Tests
             }
         }
 
-        private sealed class ZeroRandomSource : IRandomSource
+        internal sealed class ZeroRandomSource : IRandomSource
         {
             /// <summary>
             /// 常に下限を返し、開始者とシャッフルを再現可能にします。
