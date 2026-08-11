@@ -75,6 +75,7 @@ namespace CoyoteBattle.Presentation
 
             _initialized = true;
             Screen.orientation = ScreenOrientation.LandscapeLeft;
+            PresentationRenderingCamera.EnsureExists();
             _game = CreateGame();
             _document = GetComponent<UIDocument>() ?? gameObject.AddComponent<UIDocument>();
             _document.panelSettings = CreatePanelSettings();
@@ -101,7 +102,6 @@ namespace CoyoteBattle.Presentation
                 ApplySafeArea();
             }
         }
-
         private void OnDestroy()
         {
             CancelPendingOperations();

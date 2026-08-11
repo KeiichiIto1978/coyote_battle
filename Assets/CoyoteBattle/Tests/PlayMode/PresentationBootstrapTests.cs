@@ -27,6 +27,27 @@ namespace CoyoteBattle.Tests.Presentation
         }
 
         [UnityTest]
+        public IEnumerator Initialize_Cameraがない_NoCamerasRendering警告を防ぐCameraを生成する()
+        {
+            var existingCamera = Camera.main;
+            if (existingCamera != null)
+            {
+                Object.Destroy(existingCamera.gameObject);
+                yield return null;
+            }
+
+            var gameObject = new GameObject("PresentationCameraTest");
+            gameObject.AddComponent<GamePresentationController>().InitializeForTests();
+            yield return null;
+
+            var renderingCamera = GameObject.Find("CoyoteBattleCamera");
+            Assert.That(renderingCamera, Is.Not.Null);
+            Assert.That(renderingCamera.GetComponent<Camera>(), Is.Not.Null);
+            Object.Destroy(gameObject);
+            Object.Destroy(renderingCamera);
+        }
+
+        [UnityTest]
         public IEnumerator StartGame_開始ボタン_対戦画面と伏せたユーザーカードを表示する()
         {
             var gameObject = new GameObject("PresentationTest");
