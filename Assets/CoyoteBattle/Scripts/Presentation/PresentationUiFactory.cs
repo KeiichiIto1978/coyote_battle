@@ -114,22 +114,34 @@ namespace CoyoteBattle.Presentation
                 panel.style.borderTopWidth = panel.style.borderBottomWidth = 5;
             }
 
-            var avatar = new VisualElement();
-            avatar.style.height = Length.Percent(62);
+            var avatar = new VisualElement { name = $"{participant.Id}-portrait" };
+            avatar.style.width = Length.Percent(100);
+            avatar.style.flexGrow = 1;
+            avatar.style.minHeight = 1;
             SetBackground(avatar, AvatarResource(participant.Id));
+            avatar.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
+            avatar.style.backgroundRepeat = new BackgroundRepeat(Repeat.NoRepeat, Repeat.NoRepeat);
             panel.Add(avatar);
-            panel.Add(CreateLabel(PresentationText.ParticipantName(participant.Id), 20));
+            panel.Add(
+                CreateLabel(
+                    PresentationText.ParticipantName(participant.Id),
+                    20,
+                    $"{participant.Id}-name"
+                )
+            );
             panel.Add(
                 CreateLabel(
                     $"ライフ {participant.Life}"
                         + (participant.IsEliminated ? " / 脱落" : string.Empty),
-                    18
+                    18,
+                    $"{participant.Id}-life"
                 )
             );
 
             var cardLabel = CreateLabel(
                 card?.Card == null ? "—" : PresentationText.Card(card.Card.Kind, card.Card.Value),
-                27
+                27,
+                $"{participant.Id}-card"
             );
             cardLabel.style.width = 88;
             cardLabel.style.height = 112;
