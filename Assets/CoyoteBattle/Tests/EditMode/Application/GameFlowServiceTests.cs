@@ -37,7 +37,10 @@ namespace CoyoteBattle.Application.Tests
         [Test]
         public void TryStartNewGame_開始位置3を返す乱数を使う_npc3からリング順に配布する()
         {
-            var service = new GameFlowService(new FirstValueThenZeroRandomSource(3));
+            var service = new GameFlowService(
+                new FirstValueThenZeroRandomSource(3),
+                new ZeroRandomSource()
+            );
 
             service.TryStartNewGame();
 
@@ -55,7 +58,10 @@ namespace CoyoteBattle.Application.Tests
         [Test]
         public void TryStartNewGame_開始位置5を返す乱数を使う_NoGameのまま入力契約違反になる()
         {
-            var service = new GameFlowService(new FirstValueThenZeroRandomSource(5));
+            var service = new GameFlowService(
+                new FirstValueThenZeroRandomSource(5),
+                new ZeroRandomSource()
+            );
 
             Assert.That(() => service.TryStartNewGame(), Throws.InvalidOperationException);
             Assert.That(service.State, Is.EqualTo(GameFlowState.NoGame));

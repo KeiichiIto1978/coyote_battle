@@ -13,6 +13,7 @@ namespace CoyoteBattle.Application
         private const string UserParticipantId = "user";
         private static readonly IReadOnlyList<CardDeal> EmptyDeals = Array.Empty<CardDeal>();
         private readonly FieldTotalCalculator _fieldTotalCalculator = new FieldTotalCalculator();
+        private readonly IReadOnlyDictionary<string, INpcDecisionStrategy> _npcStrategies;
         private readonly IRandomSource _randomSource;
         private Deck _deck;
         private DeclarationPhase _declarationPhase;
@@ -20,12 +21,26 @@ namespace CoyoteBattle.Application
         private ParticipantRoster _roster;
 
         /// <summary>
-        /// 指定された乱数源をデッキと第1ラウンド開始者の決定に使用します。
+        /// ゲーム進行用乱数とNPC判断用乱数を分離して使用します。
         /// </summary>
-        /// <param name="randomSource">排他的上限内の値を返す乱数源です。</param>
-        public GameFlowService(IRandomSource randomSource)
+        /// <param name="randomSource">開始者とデッキへ使う乱数源です。</param>
+        /// <param name="npcRandomSource">ギャンブル型の判断だけに使う乱数源です。</param>
+        public GameFlowService(IRandomSource randomSource, IRandomSource npcRandomSource)
         {
             _randomSource = randomSource ?? throw new ArgumentNullException(nameof(randomSource));
+            if (npcRandomSource == null)
+            {
+                throw new ArgumentNullException(nameof(npcRandomSource));
+            }
+
+            var estimator = new NpcFieldTotalEstimator();
+            _npcStrategies = new Dictionary<string, INpcDecisionStrategy>
+            {
+                ["npc-1"] = NpcDecisionStrategyFactory.Create("npc-1", estimator, npcRandomSource),
+                ["npc-2"] = NpcDecisionStrategyFactory.Create("npc-2", estimator, npcRandomSource),
+                ["npc-3"] = NpcDecisionStrategyFactory.Create("npc-3", estimator, npcRandomSource),
+                ["npc-4"] = NpcDecisionStrategyFactory.Create("npc-4", estimator, npcRandomSource),
+            };
             State = GameFlowState.NoGame;
             Outcome = GameOutcome.None;
         }
@@ -178,6 +193,81 @@ namespace CoyoteBattle.Application
 
             CompleteJudgment();
             return true;
+        }
+
+        /// <summary>
+        /// 現在手番が残存NPCなら、自分のカードだけを除外した変更不能な観測を生成します。
+        /// </summary>
+        /// <param name="observation">成功時のNPC専用観測です。</param>
+        /// <returns>宣言中のNPC手番から観測を生成できた場合はtrueです。</returns>
+        public bool TryCreateCurrentNpcObservation(out NpcObservation observation)
+        {
+            observation = null;
+            if (
+                State != GameFlowState.Declaring
+                || string.IsNullOrEmpty(CurrentParticipantId)
+                || !_roster.TryGetParticipant(CurrentParticipantId, out var actor)
+                || actor.Kind != ParticipantKind.Npc
+                || actor.IsEliminated
+                || !_npcStrategies.ContainsKey(actor.Id)
+            )
+            {
+                return false;
+            }
+
+            var participants = _roster
+                .Participants.Select(item => new NpcParticipantObservation(
+                    item.Id,
+                    item.Kind,
+                    item.Life
+                ))
+                .ToList()
+                .AsReadOnly();
+            var remainingIds = _roster
+                .RemainingParticipants.Select(item => item.Id)
+                .ToList()
+                .AsReadOnly();
+            var visibleCards = _deals
+                .Where(deal => deal.ParticipantId != actor.Id)
+                .ToList()
+                .AsReadOnly();
+            observation = new NpcObservation(
+                actor.Id,
+                participants,
+                remainingIds,
+                visibleCards,
+                _declarationPhase.History
+            );
+            return true;
+        }
+
+        /// <summary>
+        /// 現在手番NPCの観測、判断、既存宣言APIへの適用を1手だけ実行します。
+        /// </summary>
+        /// <returns>NPCの数字宣言またはコヨーテ宣言を受理した場合はtrueです。</returns>
+        public bool TryExecuteCurrentNpcTurn()
+        {
+            if (!TryCreateCurrentNpcObservation(out var observation))
+            {
+                return false;
+            }
+
+            var decision = _npcStrategies[observation.ActorId].Decide(observation);
+            if (decision == null)
+            {
+                return false;
+            }
+
+            switch (decision.Kind)
+            {
+                case NpcDecisionKind.Number:
+                    return decision.Number.HasValue
+                        && TryDeclareNumber(observation.ActorId, decision.Number.Value);
+                case NpcDecisionKind.Coyote:
+                    return TryDeclareCoyote(observation.ActorId);
+                default:
+                    return false;
+            }
         }
 
         /// <summary>
