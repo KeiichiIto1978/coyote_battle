@@ -14,12 +14,18 @@ namespace CoyoteBattle.Presentation
         {
             switch (participantId)
             {
-                case "user": return "あなた";
-                case "npc-1": return "NPC 1（強気）";
-                case "npc-2": return "NPC 2（慎重）";
-                case "npc-3": return "NPC 3（ギャンブル）";
-                case "npc-4": return "NPC 4（分析）";
-                default: return participantId ?? string.Empty;
+                case "user":
+                    return "あなた";
+                case "npc-1":
+                    return "NPC 1（強気）";
+                case "npc-2":
+                    return "NPC 2（慎重）";
+                case "npc-3":
+                    return "NPC 3（ギャンブル）";
+                case "npc-4":
+                    return "NPC 4（分析）";
+                default:
+                    return participantId ?? string.Empty;
             }
         }
 
@@ -30,12 +36,18 @@ namespace CoyoteBattle.Presentation
         {
             switch (kind)
             {
-                case CardKind.Number: return value?.ToString() ?? "?";
-                case CardKind.Night: return "夜";
-                case CardKind.Double: return "×2";
-                case CardKind.MaxToZero: return "MAX→0";
-                case CardKind.Mystery: return "？";
-                default: return "?";
+                case CardKind.Number:
+                    return value?.ToString() ?? "?";
+                case CardKind.Night:
+                    return "夜";
+                case CardKind.Double:
+                    return "×2";
+                case CardKind.MaxToZero:
+                    return "MAX→0";
+                case CardKind.Mystery:
+                    return "？";
+                default:
+                    return "?";
             }
         }
     }

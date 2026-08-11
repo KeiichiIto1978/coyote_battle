@@ -96,6 +96,7 @@ namespace CoyoteBattle.Presentation
                 ApplySafeArea();
             }
         }
+
         private void OnDestroy()
         {
             CancelPendingOperations();
@@ -104,10 +105,12 @@ namespace CoyoteBattle.Presentation
                 Destroy(_document.panelSettings);
             }
         }
+
         private static GameFlowService CreateGame()
         {
             return new GameFlowService(new SystemRandomSource(), new SystemRandomSource());
         }
+
         private static PanelSettings CreatePanelSettings(ThemeStyleSheet themeStyleSheet)
         {
             var settings = ScriptableObject.CreateInstance<PanelSettings>();
@@ -191,7 +194,9 @@ namespace CoyoteBattle.Presentation
             _outcomeLabel = CreateLabel(string.Empty, 52, "outcome-label");
             _gameOverDialog.Add(_outcomeLabel);
             _gameOverDialog.Add(CreateButton("もう一度遊ぶ", StartNewGame, "restart-button"));
-            _gameOverDialog.Add(CreateButton("タイトルへ戻る", ReturnToTitle, "return-title-button"));
+            _gameOverDialog.Add(
+                CreateButton("タイトルへ戻る", ReturnToTitle, "return-title-button")
+            );
 
             _root.Add(_titleScreen);
             _root.Add(_battleScreen);
@@ -270,7 +275,14 @@ namespace CoyoteBattle.Presentation
         {
             SetInputEnabled(false);
             var previous = _game.DeclarationHistory.LastOrDefault()?.Value;
-            if (!NumberDeclarationInputValidator.TryValidate(_numberInput.value, previous, out var value, out var error))
+            if (
+                !NumberDeclarationInputValidator.TryValidate(
+                    _numberInput.value,
+                    previous,
+                    out var value,
+                    out var error
+                )
+            )
             {
                 _errorLabel.text = error;
                 RefreshBattle();
@@ -320,7 +332,8 @@ namespace CoyoteBattle.Presentation
                 && _game.CurrentParticipantId != UserId
             )
             {
-                _statusLabel.text = $"{PresentationText.ParticipantName(_game.CurrentParticipantId)} が考え中…";
+                _statusLabel.text =
+                    $"{PresentationText.ParticipantName(_game.CurrentParticipantId)} が考え中…";
                 SetInputEnabled(false);
                 yield return new WaitForSeconds(NpcThinkingSeconds);
                 if (generation != _operationGeneration || !_game.TryExecuteCurrentNpcTurn())
@@ -336,8 +349,10 @@ namespace CoyoteBattle.Presentation
 
             if (generation == _operationGeneration)
             {
-                if (_game.State == GameFlowState.Declaring) RefreshBattle();
-                else ShowResult();
+                if (_game.State == GameFlowState.Declaring)
+                    RefreshBattle();
+                else
+                    ShowResult();
             }
         }
 
@@ -362,50 +377,31 @@ namespace CoyoteBattle.Presentation
         {
             _roundLabel.text = $"ROUND {_game.RoundNumber}";
             var last = _game.DeclarationHistory.LastOrDefault();
-            _declarationLabel.text = last == null
-                ? "最初の数字を宣言してください"
-                : $"直前の宣言：{last.Value}（{PresentationText.ParticipantName(last.ParticipantId)}）";
-            _statusLabel.text = _game.CurrentParticipantId == UserId
-                ? "あなたの手番"
-                : $"{PresentationText.ParticipantName(_game.CurrentParticipantId)} の手番";
+            _declarationLabel.text =
+                last == null
+                    ? "最初の数字を宣言してください"
+                    : $"直前の宣言：{last.Value}（{PresentationText.ParticipantName(last.ParticipantId)}）";
+            _statusLabel.text =
+                _game.CurrentParticipantId == UserId
+                    ? "あなたの手番"
+                    : $"{PresentationText.ParticipantName(_game.CurrentParticipantId)} の手番";
             _npcRow.Clear();
-            foreach (var participant in _game.Participants.Where(item => item.Kind == ParticipantKind.Npc))
+            foreach (
+                var participant in _game.Participants.Where(item =>
+                    item.Kind == ParticipantKind.Npc
+                )
+            )
             {
-                _npcRow.Add(CreateParticipantPanel(participant));
+                var card = _game.CurrentCards.FirstOrDefault(item =>
+                    item.ParticipantId == participant.Id
+                );
+                _npcRow.Add(CreateParticipantPanel(participant, _game.CurrentParticipantId, card));
             }
 
             var user = _game.Participants.Single(item => item.Id == UserId);
             _userLifeLabel.text = $"ライフ {user.Life}";
             _userCardLabel.text = "伏せ札";
             SetInputEnabled(_game.CurrentParticipantId == UserId);
-        }
-
-        private VisualElement CreateParticipantPanel(ParticipantState participant)
-        {
-            var panel = CreatePanel(participant.Id);
-            panel.style.width = Length.Percent(23);
-            if (participant.Id == _game.CurrentParticipantId)
-            {
-                panel.style.borderTopColor = panel.style.borderBottomColor = new Color(1f, 0.72f, 0.2f);
-                panel.style.borderTopWidth = panel.style.borderBottomWidth = 5;
-            }
-            var avatar = new VisualElement();
-            avatar.style.height = Length.Percent(62);
-            SetBackground(avatar, AvatarResource(participant.Id));
-            var card = _game.CurrentCards.FirstOrDefault(item => item.ParticipantId == participant.Id);
-            panel.Add(avatar);
-            panel.Add(CreateLabel(PresentationText.ParticipantName(participant.Id), 20));
-            panel.Add(CreateLabel($"ライフ {participant.Life}" + (participant.IsEliminated ? " / 脱落" : string.Empty), 18));
-            var cardLabel = CreateLabel(card?.Card == null ? "—" : PresentationText.Card(card.Card.Kind, card.Card.Value), 27);
-            cardLabel.style.width = 88;
-            cardLabel.style.height = 112;
-            if (card?.Card != null)
-            {
-                SetBackground(cardLabel, CardResource(card.Card));
-                cardLabel.style.color = card.Card.Kind == CardKind.Number ? Color.black : Color.white;
-            }
-            panel.Add(cardLabel);
-            return panel;
         }
 
         private void ShowResult()
@@ -417,7 +413,12 @@ namespace CoyoteBattle.Presentation
             _resultCards.Clear();
             foreach (var deal in result.DealtCards)
             {
-                _resultCards.Add(CreateResultCard(PresentationText.ParticipantName(deal.ParticipantId), deal.Card));
+                _resultCards.Add(
+                    CreateResultCard(
+                        PresentationText.ParticipantName(deal.ParticipantId),
+                        deal.Card
+                    )
+                );
             }
             foreach (var card in result.AdditionalCards)
             {
@@ -429,25 +430,15 @@ namespace CoyoteBattle.Presentation
                 + $"コヨーテ　{PresentationText.ParticipantName(result.CoyoteDeclarerId)}\n\n"
                 + $"実合計　{result.ActualTotal}\n"
                 + $"敗者　{PresentationText.ParticipantName(result.LoserId)}\n\n"
-                + string.Join("\n", result.Participants.Select(item => $"{PresentationText.ParticipantName(item.Id)}：ライフ {item.Life}{(item.IsEliminated ? "（脱落）" : string.Empty)}"));
+                + string.Join(
+                    "\n",
+                    result.Participants.Select(item =>
+                        $"{PresentationText.ParticipantName(item.Id)}：ライフ {item.Life}{(item.IsEliminated ? "（脱落）" : string.Empty)}"
+                    )
+                );
             SetButtonEnabled(_nextRoundButton, _game.State == GameFlowState.RoundResult);
             SetVisible(_gameOverDialog, _game.State == GameFlowState.GameOver);
             _outcomeLabel.text = _game.Outcome == GameOutcome.UserVictory ? "勝利！" : "敗北…";
-        }
-
-        private VisualElement CreateResultCard(string owner, CardState card)
-        {
-            var panel = CreatePanel();
-            panel.style.width = 190;
-            panel.style.height = 210;
-            panel.Add(CreateLabel(owner, 18));
-            var cardLabel = CreateLabel(PresentationText.Card(card.Kind, card.Value), 38);
-            cardLabel.style.width = 105;
-            cardLabel.style.height = 140;
-            cardLabel.style.color = card.Kind == CardKind.Number ? Color.black : Color.white;
-            SetBackground(cardLabel, CardResource(card));
-            panel.Add(cardLabel);
-            return panel;
         }
 
         private void ReturnToTitle()
@@ -465,10 +456,16 @@ namespace CoyoteBattle.Presentation
 
         private void SetInputEnabled(bool enabled)
         {
-            var isUserTurn = enabled && _game.State == GameFlowState.Declaring && _game.CurrentParticipantId == UserId;
+            var isUserTurn =
+                enabled
+                && _game.State == GameFlowState.Declaring
+                && _game.CurrentParticipantId == UserId;
             _numberInput.SetEnabled(isUserTurn);
             var last = _game.DeclarationHistory.LastOrDefault();
-            SetButtonEnabled(_declareButton, isUserTurn && (last == null || last.Value < int.MaxValue));
+            SetButtonEnabled(
+                _declareButton,
+                isUserTurn && (last == null || last.Value < int.MaxValue)
+            );
             SetButtonEnabled(_coyoteButton, isUserTurn && _game.DeclarationHistory.Count > 0);
         }
 

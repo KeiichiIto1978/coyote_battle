@@ -89,19 +89,91 @@ namespace CoyoteBattle.Presentation
 
             var definition = new StyleFontDefinition(FontDefinition.FromFont(font));
             root.style.unityFontDefinition = definition;
-            root.Query<TextElement>().ForEach(element =>
-                element.style.unityFontDefinition = definition
+            root.Query<TextElement>()
+                .ForEach(element => element.style.unityFontDefinition = definition);
+        }
+
+        /// <summary>
+        /// NPCのアバター、ライフ、公開カードを1つの表示パネルにまとめます。
+        /// </summary>
+        internal static VisualElement CreateParticipantPanel(
+            ParticipantState participant,
+            string currentParticipantId,
+            DealtCardState card
+        )
+        {
+            var panel = CreatePanel(participant.Id);
+            panel.style.width = Length.Percent(23);
+            if (participant.Id == currentParticipantId)
+            {
+                panel.style.borderTopColor = panel.style.borderBottomColor = new Color(
+                    1f,
+                    0.72f,
+                    0.2f
+                );
+                panel.style.borderTopWidth = panel.style.borderBottomWidth = 5;
+            }
+
+            var avatar = new VisualElement();
+            avatar.style.height = Length.Percent(62);
+            SetBackground(avatar, AvatarResource(participant.Id));
+            panel.Add(avatar);
+            panel.Add(CreateLabel(PresentationText.ParticipantName(participant.Id), 20));
+            panel.Add(
+                CreateLabel(
+                    $"ライフ {participant.Life}"
+                        + (participant.IsEliminated ? " / 脱落" : string.Empty),
+                    18
+                )
             );
+
+            var cardLabel = CreateLabel(
+                card?.Card == null ? "—" : PresentationText.Card(card.Card.Kind, card.Card.Value),
+                27
+            );
+            cardLabel.style.width = 88;
+            cardLabel.style.height = 112;
+            if (card?.Card != null)
+            {
+                SetBackground(cardLabel, CardResource(card.Card));
+                cardLabel.style.color =
+                    card.Card.Kind == CardKind.Number ? Color.black : Color.white;
+            }
+
+            panel.Add(cardLabel);
+            return panel;
+        }
+
+        /// <summary>
+        /// ラウンド結果に公開する所有者名付きカードを生成します。
+        /// </summary>
+        internal static VisualElement CreateResultCard(string owner, CardState card)
+        {
+            var panel = CreatePanel();
+            panel.style.width = 190;
+            panel.style.height = 210;
+            panel.Add(CreateLabel(owner, 18));
+            var cardLabel = CreateLabel(PresentationText.Card(card.Kind, card.Value), 38);
+            cardLabel.style.width = 105;
+            cardLabel.style.height = 140;
+            cardLabel.style.color = card.Kind == CardKind.Number ? Color.black : Color.white;
+            SetBackground(cardLabel, CardResource(card));
+            panel.Add(cardLabel);
+            return panel;
         }
 
         internal static string AvatarResource(string id)
         {
             switch (id)
             {
-                case "npc-1": return "Art/NpcAggressive";
-                case "npc-2": return "Art/NpcCautious";
-                case "npc-3": return "Art/NpcGambling";
-                default: return "Art/NpcAnalytical";
+                case "npc-1":
+                    return "Art/NpcAggressive";
+                case "npc-2":
+                    return "Art/NpcCautious";
+                case "npc-3":
+                    return "Art/NpcGambling";
+                default:
+                    return "Art/NpcAnalytical";
             }
         }
 
@@ -109,17 +181,23 @@ namespace CoyoteBattle.Presentation
         {
             if (card.Kind == CardKind.Number)
             {
-                if (card.Value > 0) return "Art/CardPositive";
-                if (card.Value < 0) return "Art/CardNegative";
+                if (card.Value > 0)
+                    return "Art/CardPositive";
+                if (card.Value < 0)
+                    return "Art/CardNegative";
                 return "Art/CardZero";
             }
 
             switch (card.Kind)
             {
-                case CardKind.Night: return "Art/CardNight";
-                case CardKind.Double: return "Art/CardDouble";
-                case CardKind.MaxToZero: return "Art/CardMaxToZero";
-                default: return "Art/CardMystery";
+                case CardKind.Night:
+                    return "Art/CardNight";
+                case CardKind.Double:
+                    return "Art/CardDouble";
+                case CardKind.MaxToZero:
+                    return "Art/CardMaxToZero";
+                default:
+                    return "Art/CardMystery";
             }
         }
     }

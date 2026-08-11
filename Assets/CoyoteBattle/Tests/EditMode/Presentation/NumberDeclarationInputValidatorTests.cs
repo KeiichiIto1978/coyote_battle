@@ -13,7 +13,15 @@ namespace CoyoteBattle.Tests.Presentation
         [TestCase("2147483647", 10, int.MaxValue)]
         public void TryValidate_有効な半角整数_値を返す(string input, int? previous, int expected)
         {
-            Assert.That(NumberDeclarationInputValidator.TryValidate(input, previous, out var value, out var error), Is.True);
+            Assert.That(
+                NumberDeclarationInputValidator.TryValidate(
+                    input,
+                    previous,
+                    out var value,
+                    out var error
+                ),
+                Is.True
+            );
             Assert.That(value, Is.EqualTo(expected));
             Assert.That(error, Is.Empty);
         }
@@ -27,7 +35,10 @@ namespace CoyoteBattle.Tests.Presentation
         [TestCase("2147483648")]
         public void TryValidate_形式または範囲が不正_エラーを返す(string input)
         {
-            Assert.That(NumberDeclarationInputValidator.TryValidate(input, null, out _, out var error), Is.False);
+            Assert.That(
+                NumberDeclarationInputValidator.TryValidate(input, null, out _, out var error),
+                Is.False
+            );
             Assert.That(error, Is.Not.Empty);
         }
 
@@ -35,7 +46,10 @@ namespace CoyoteBattle.Tests.Presentation
         [TestCase("10", 10)]
         public void TryValidate_直前宣言以下_エラーを返す(string input, int previous)
         {
-            Assert.That(NumberDeclarationInputValidator.TryValidate(input, previous, out _, out var error), Is.False);
+            Assert.That(
+                NumberDeclarationInputValidator.TryValidate(input, previous, out _, out var error),
+                Is.False
+            );
             Assert.That(error, Does.Contain("大きい"));
         }
     }

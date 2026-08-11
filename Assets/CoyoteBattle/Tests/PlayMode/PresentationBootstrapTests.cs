@@ -51,7 +51,10 @@ namespace CoyoteBattle.Tests.Presentation
             Assert.That(document.rootVisualElement.Q<Button>("start-game-button"), Is.Not.Null);
             var title = document.rootVisualElement.Q<Label>("title-label");
             Assert.That(title.resolvedStyle.unityFontDefinition.font, Is.Not.Null);
-            Assert.That(title.resolvedStyle.unityFontDefinition.font.name, Does.Contain("NotoSansJP"));
+            Assert.That(
+                title.resolvedStyle.unityFontDefinition.font.name,
+                Does.Contain("NotoSansJP")
+            );
             Object.Destroy(gameObject);
         }
 
