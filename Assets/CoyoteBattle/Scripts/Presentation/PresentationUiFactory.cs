@@ -11,6 +11,23 @@ namespace CoyoteBattle.Presentation
     /// </summary>
     internal static class PresentationUiFactory
     {
+        private static readonly Color NumberInputTextColor = new Color32(24, 32, 40, 255);
+        private static readonly Color NumberInputBackgroundColor = new Color32(250, 247, 238, 255);
+        private static readonly Color NumberInputBorderColor = new Color32(126, 82, 40, 255);
+        private static readonly Color DisabledNumberInputTextColor = new Color32(65, 68, 72, 255);
+        private static readonly Color DisabledNumberInputBackgroundColor = new Color32(
+            208,
+            207,
+            201,
+            255
+        );
+        private static readonly Color DisabledNumberInputBorderColor = new Color32(
+            111,
+            113,
+            115,
+            255
+        );
+
         internal static VisualElement CreateScreen(string name)
         {
             var screen = new VisualElement { name = name };
@@ -91,6 +108,93 @@ namespace CoyoteBattle.Presentation
             root.style.unityFontDefinition = definition;
             root.Query<TextElement>()
                 .ForEach(element => element.style.unityFontDefinition = definition);
+        }
+
+        /// <summary>
+        /// 数字入力欄の内部テキストへ、同梱フォントと可読性を保つ描画スタイルを適用します。
+        /// </summary>
+        /// <param name="textField">Battle画面で数値宣言に使用する入力欄です。</param>
+        /// <param name="font">入力文字へ明示適用する同梱フォントです。</param>
+        internal static void ConfigureNumberInput(TextField textField, Font font)
+        {
+            if (textField == null)
+            {
+                throw new ArgumentNullException(nameof(textField));
+            }
+
+            var textInput = textField.textEdition as TextElement;
+            var inputContainer = textField.Q<VisualElement>(TextField.textInputUssName);
+            if (textInput == null || inputContainer == null)
+            {
+                Debug.LogError("数字入力欄の内部テキスト要素を取得できませんでした。");
+                return;
+            }
+
+            var styleSheet = Resources.Load<StyleSheet>("Styles/NumberInput");
+            if (styleSheet != null)
+            {
+                textField.styleSheets.Add(styleSheet);
+            }
+            else
+            {
+                Debug.LogError("数字入力欄のスタイルシートを読み込めませんでした。");
+            }
+
+            textField.style.height = 55;
+            textField.style.width = Length.Percent(100);
+            textField.style.fontSize = 24;
+            textField.style.opacity = 1f;
+            textField.labelElement.style.width = 72;
+            textField.labelElement.style.minWidth = 72;
+            textField.labelElement.style.flexShrink = 0;
+            textField.labelElement.style.color = Color.white;
+            inputContainer.style.flexGrow = 1;
+            inputContainer.style.minWidth = 0;
+            inputContainer.style.height = 48;
+            textInput.style.flexGrow = 1;
+            textInput.style.minWidth = 0;
+            textInput.style.height = 48;
+            textInput.style.paddingLeft = textInput.style.paddingRight = 12;
+            textInput.style.unityTextAlign = TextAnchor.MiddleLeft;
+            textInput.style.whiteSpace = WhiteSpace.NoWrap;
+            textInput.style.overflow = Overflow.Hidden;
+            textInput.style.borderTopLeftRadius = textInput.style.borderTopRightRadius = 6;
+            textInput.style.borderBottomLeftRadius = textInput.style.borderBottomRightRadius = 6;
+            textInput.style.borderLeftWidth = textInput.style.borderRightWidth = 2;
+            textInput.style.borderTopWidth = textInput.style.borderBottomWidth = 2;
+
+            if (font != null)
+            {
+                textInput.style.unityFontDefinition = new StyleFontDefinition(
+                    FontDefinition.FromFont(font)
+                );
+            }
+
+            ApplyNumberInputEnabledStyle(textField, textField.enabledInHierarchy);
+        }
+
+        /// <summary>
+        /// 数字入力欄の操作可否を、既存値を読める配色を維持しながら描き分けます。
+        /// </summary>
+        /// <param name="textField">表示状態を更新する数字入力欄です。</param>
+        /// <param name="enabled">ユーザー入力を受け付ける場合はtrueです。</param>
+        internal static void ApplyNumberInputEnabledStyle(TextField textField, bool enabled)
+        {
+            var textInput = textField?.textEdition as TextElement;
+            if (textInput == null)
+            {
+                return;
+            }
+
+            textField.style.opacity = 1f;
+            textInput.style.opacity = 1f;
+            textInput.style.color = enabled ? NumberInputTextColor : DisabledNumberInputTextColor;
+            textInput.style.backgroundColor = enabled
+                ? NumberInputBackgroundColor
+                : DisabledNumberInputBackgroundColor;
+            var borderColor = enabled ? NumberInputBorderColor : DisabledNumberInputBorderColor;
+            textInput.style.borderLeftColor = textInput.style.borderRightColor = borderColor;
+            textInput.style.borderTopColor = textInput.style.borderBottomColor = borderColor;
         }
 
         /// <summary>

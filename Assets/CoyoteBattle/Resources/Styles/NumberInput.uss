@@ -1,0 +1,4 @@
+#number-input .unity-base-text-field__input {
+    --unity-cursor-color: rgba(154, 0, 31, 1);
+    --unity-selection-color: rgba(244, 185, 66, 0.9);
+}
