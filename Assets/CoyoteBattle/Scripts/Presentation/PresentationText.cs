@@ -39,7 +39,7 @@ namespace CoyoteBattle.Presentation
                 case CardKind.Number:
                     return value?.ToString() ?? "?";
                 case CardKind.Night:
-                    return "夜";
+                    return "0★";
                 case CardKind.Double:
                     return "×2";
                 case CardKind.MaxToZero:

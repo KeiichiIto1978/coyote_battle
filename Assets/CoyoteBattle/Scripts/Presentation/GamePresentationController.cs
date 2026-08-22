@@ -20,6 +20,7 @@ namespace CoyoteBattle.Presentation
         private VisualElement _root;
         private VisualElement _titleScreen;
         private VisualElement _battleScreen;
+        private VisualElement _battleMain;
         private VisualElement _resultScreen;
         private VisualElement _gameOverDialog;
         private VisualElement _npcRow;
@@ -39,6 +40,7 @@ namespace CoyoteBattle.Presentation
         private TextField _numberInput;
         private Button _declareButton;
         private Button _coyoteButton;
+        private Button _cardInformationButton;
         private Button _nextRoundButton;
         private int _operationGeneration;
         private Coroutine _npcTurnsCoroutine;
@@ -172,14 +174,31 @@ namespace CoyoteBattle.Presentation
             _titleScreen.Add(start);
 
             _battleScreen = CreateScreen("battle-screen");
+            _battleScreen.style.flexDirection = FlexDirection.Row;
+            _battleMain = new VisualElement { name = "battle-main" };
+            _battleMain.style.flexGrow = 1;
+            _battleMain.style.minWidth = 0;
+            _battleScreen.Add(_battleMain);
+            var battleHeader = new VisualElement { name = "battle-header" };
+            battleHeader.style.flexDirection = FlexDirection.Row;
+            battleHeader.style.alignItems = Align.Center;
             _roundLabel = CreateLabel(string.Empty, 28, "round-label");
+            _roundLabel.style.flexGrow = 1;
             _roundLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
-            _battleScreen.Add(_roundLabel);
+            _cardInformationButton = CreateButton(
+                "カード情報",
+                OpenCardInformation,
+                "card-information-button"
+            );
+            _cardInformationButton.style.width = 180;
+            battleHeader.Add(_roundLabel);
+            battleHeader.Add(_cardInformationButton);
+            _battleMain.Add(battleHeader);
             _npcRow = new VisualElement { name = "npc-row" };
             _npcRow.style.flexDirection = FlexDirection.Row;
             _npcRow.style.justifyContent = Justify.SpaceAround;
             _npcRow.style.height = Length.Percent(47);
-            _battleScreen.Add(_npcRow);
+            _battleMain.Add(_npcRow);
             var centerPanel = CreatePanel("declaration-panel");
             centerPanel.style.alignSelf = Align.Center;
             centerPanel.style.width = Length.Percent(70);
@@ -200,8 +219,9 @@ namespace CoyoteBattle.Presentation
             centerPanel.Add(_statusLabel);
             centerPanel.Add(_declarationLabel);
             centerPanel.Add(_actionBanner);
-            _battleScreen.Add(centerPanel);
-            _battleScreen.Add(BuildUserArea());
+            _battleMain.Add(centerPanel);
+            _battleMain.Add(BuildUserArea());
+            BuildCardInformation();
 
             _resultScreen = CreateScreen("round-result-screen");
             _resultScreen.style.backgroundColor = new Color(0.02f, 0.06f, 0.1f, 0.92f);
@@ -295,6 +315,7 @@ namespace CoyoteBattle.Presentation
         private void StartNewGame()
         {
             CancelPendingOperations();
+            HideCardInformation();
             _game = _gameFactory();
             if (!_game.TryStartNewGame())
             {
@@ -311,6 +332,7 @@ namespace CoyoteBattle.Presentation
         private void StartNextRound()
         {
             CancelPendingOperations();
+            HideCardInformation();
             SetButtonEnabled(_nextRoundButton, false);
             if (!_game.TryStartNextRound())
             {
@@ -369,6 +391,7 @@ namespace CoyoteBattle.Presentation
 
         private void ShowTitle()
         {
+            HideCardInformation();
             SetVisible(_titleScreen, true);
             SetVisible(_battleScreen, false);
             SetVisible(_resultScreen, false);
@@ -426,6 +449,7 @@ namespace CoyoteBattle.Presentation
         {
             var isUserTurn =
                 enabled
+                && !_isCardInformationOpen
                 && _game.State == GameFlowState.Declaring
                 && _game.CurrentParticipantId == UserId;
             _numberInput.SetEnabled(isUserTurn);
@@ -436,6 +460,7 @@ namespace CoyoteBattle.Presentation
                 isUserTurn && (last == null || last.Value < int.MaxValue)
             );
             SetButtonEnabled(_coyoteButton, isUserTurn && _game.DeclarationHistory.Count > 0);
+            SetButtonEnabled(_cardInformationButton, isUserTurn && !_isNpcSequenceRunning);
         }
 
         private void ApplySafeArea()

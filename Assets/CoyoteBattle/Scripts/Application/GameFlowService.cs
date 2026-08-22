@@ -76,6 +76,12 @@ namespace CoyoteBattle.Application
         public RoundResultSnapshot LastRoundResult { get; private set; }
 
         /// <summary>
+        /// 初期デッキと現在の捨て札を表示単位で集約した、変更できない一覧を取得します。
+        /// </summary>
+        public IReadOnlyList<CardCountSnapshot> CardInformation =>
+            CardInformationAggregator.Create(_deck);
+
+        /// <summary>
         /// 脱落者を含む参加者状態の変更不能なスナップショットを取得します。
         /// </summary>
         public IReadOnlyList<ParticipantState> Participants =>

@@ -17,7 +17,7 @@ namespace CoyoteBattle.Tests.Presentation
             Assert.That(PresentationText.ParticipantName(id), Is.EqualTo(expected));
         }
 
-        [TestCase(CardKind.Night, "夜")]
+        [TestCase(CardKind.Night, "0★")]
         [TestCase(CardKind.Double, "×2")]
         [TestCase(CardKind.MaxToZero, "MAX→0")]
         [TestCase(CardKind.Mystery, "？")]
