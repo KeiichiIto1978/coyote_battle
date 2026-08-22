@@ -85,6 +85,7 @@ namespace CoyoteBattle.Presentation
             _interfaceFont = Resources.Load<Font>("Fonts/NotoSansJP");
             BuildUi();
             ApplyFont(_root, _interfaceFont);
+            ConfigureNumberInput(_numberInput, _interfaceFont);
             ShowTitle();
             ApplySafeArea();
         }
@@ -227,8 +228,6 @@ namespace CoyoteBattle.Presentation
             controls.style.width = 600;
             controls.style.marginLeft = 24;
             _numberInput = new TextField("数字") { name = "number-input", maxLength = 10 };
-            _numberInput.style.height = 55;
-            _numberInput.style.fontSize = 24;
             var buttons = new VisualElement();
             buttons.style.flexDirection = FlexDirection.Row;
             _declareButton = CreateButton("数字を宣言", DeclareNumber, "declare-number-button");
@@ -461,6 +460,7 @@ namespace CoyoteBattle.Presentation
                 && _game.State == GameFlowState.Declaring
                 && _game.CurrentParticipantId == UserId;
             _numberInput.SetEnabled(isUserTurn);
+            ApplyNumberInputEnabledStyle(_numberInput, isUserTurn);
             var last = _game.DeclarationHistory.LastOrDefault();
             SetButtonEnabled(
                 _declareButton,
@@ -472,16 +472,7 @@ namespace CoyoteBattle.Presentation
         private void ApplySafeArea()
         {
             _lastSafeArea = Screen.safeArea;
-            var padding = SafeAreaPaddingCalculator.Calculate(
-                Mathf.Max(1, Screen.width),
-                Mathf.Max(1, Screen.height),
-                _lastSafeArea,
-                new Vector2(1920, 1080)
-            );
-            _root.style.paddingLeft = padding.x;
-            _root.style.paddingTop = padding.y;
-            _root.style.paddingRight = padding.z;
-            _root.style.paddingBottom = padding.w;
+            SafeAreaStyleApplier.Apply(_root, Screen.width, Screen.height, _lastSafeArea);
         }
 
         private static void SetButtonEnabled(Button button, bool enabled)
