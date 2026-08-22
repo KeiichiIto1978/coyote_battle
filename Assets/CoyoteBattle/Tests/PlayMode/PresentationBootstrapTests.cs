@@ -132,7 +132,7 @@ namespace CoyoteBattle.Tests.Presentation
                 root.Q<VisualElement>("round-result-screen").style.display.value,
                 Is.EqualTo(DisplayStyle.Flex)
             );
-            Assert.That(root.Q<Label>("result-summary").text, Does.Contain("実合計"));
+            Assert.That(root.Q<Label>("result-total").text, Does.Contain("実合計"));
             Click(root.Q<Button>("next-round-button"));
             yield return null;
             Assert.That(
