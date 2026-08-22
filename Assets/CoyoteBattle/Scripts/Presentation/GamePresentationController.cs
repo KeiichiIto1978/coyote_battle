@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Linq;
 using CoyoteBattle.Application;
 using CoyoteBattle.Domain;
@@ -13,10 +12,9 @@ namespace CoyoteBattle.Presentation
     /// Applicationの状態を4画面へ投影し、ユーザー操作とNPC自動進行を仲介します。
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class GamePresentationController : MonoBehaviour
+    public sealed partial class GamePresentationController : MonoBehaviour
     {
         private const string UserId = "user";
-        private const float NpcThinkingSeconds = 0.8f;
         private GameFlowService _game;
         private UIDocument _document;
         private VisualElement _root;
@@ -29,21 +27,29 @@ namespace CoyoteBattle.Presentation
         private Label _roundLabel;
         private Label _statusLabel;
         private Label _declarationLabel;
+        private Label _actionBanner;
         private Label _userLifeLabel;
         private Label _userCardLabel;
         private Label _errorLabel;
-        private Label _resultSummary;
+        private Label _resultLoser;
+        private Label _resultTotal;
+        private Label _resultDeclaration;
+        private Label _resultDetails;
         private Label _outcomeLabel;
         private TextField _numberInput;
         private Button _declareButton;
         private Button _coyoteButton;
         private Button _nextRoundButton;
         private int _operationGeneration;
+        private Coroutine _npcTurnsCoroutine;
+        private bool _isNpcSequenceRunning;
         private bool _initialized;
         private Rect _lastSafeArea;
         private Font _interfaceFont;
         private ThemeStyleSheet _themeStyleSheet;
         private Func<GameFlowService> _gameFactory = CreateGame;
+        private IPresentationDelay _presentationDelay = new RealtimePresentationDelay();
+        private INpcTurnExecutor _npcTurnExecutor = new ApplicationNpcTurnExecutor();
 
         /// <summary>
         /// Unityライフサイクルから画面を初期化します。
@@ -65,6 +71,25 @@ namespace CoyoteBattle.Presentation
             }
 
             _gameFactory = gameFactory ?? throw new ArgumentNullException(nameof(gameFactory));
+        }
+
+        /// <summary>
+        /// PlayModeテストでNPCの待機とApplication呼び出しを手動制御できるよう設定します。
+        /// </summary>
+        /// <param name="gameFactory">再現可能なゲーム生成方法です。</param>
+        /// <param name="presentationDelay">思考中と行動表示の待機方法です。</param>
+        /// <param name="npcTurnExecutor">NPCの1行動をApplicationへ送る方法です。</param>
+        internal void ConfigureForTests(
+            Func<GameFlowService> gameFactory,
+            IPresentationDelay presentationDelay,
+            INpcTurnExecutor npcTurnExecutor
+        )
+        {
+            ConfigureForTests(gameFactory);
+            _presentationDelay =
+                presentationDelay ?? throw new ArgumentNullException(nameof(presentationDelay));
+            _npcTurnExecutor =
+                npcTurnExecutor ?? throw new ArgumentNullException(nameof(npcTurnExecutor));
         }
 
         private void Initialize()
@@ -157,12 +182,24 @@ namespace CoyoteBattle.Presentation
             _battleScreen.Add(_npcRow);
             var centerPanel = CreatePanel("declaration-panel");
             centerPanel.style.alignSelf = Align.Center;
-            centerPanel.style.width = Length.Percent(56);
-            centerPanel.style.height = 92;
-            _statusLabel = CreateLabel(string.Empty, 23, "status-label");
-            _declarationLabel = CreateLabel(string.Empty, 28, "declaration-label");
+            centerPanel.style.width = Length.Percent(70);
+            centerPanel.style.height = 210;
+            centerPanel.style.flexShrink = 0;
+            _statusLabel = CreateLabel(string.Empty, 21, "status-label");
+            _statusLabel.style.marginTop = _statusLabel.style.marginBottom = 2;
+            _declarationLabel = CreateLabel(string.Empty, 26, "declaration-label");
+            _declarationLabel.style.marginTop = _declarationLabel.style.marginBottom = 2;
+            _declarationLabel.style.whiteSpace = WhiteSpace.Normal;
+            _actionBanner = CreateLabel(string.Empty, 32, "action-banner");
+            _actionBanner.style.width = Length.Percent(100);
+            _actionBanner.style.flexShrink = 0;
+            _actionBanner.style.marginTop = _actionBanner.style.marginBottom = 2;
+            _actionBanner.style.color = new Color(1f, 0.78f, 0.22f);
+            _actionBanner.style.unityFontStyleAndWeight = FontStyle.Bold;
+            _actionBanner.style.whiteSpace = WhiteSpace.NoWrap;
             centerPanel.Add(_statusLabel);
             centerPanel.Add(_declarationLabel);
+            centerPanel.Add(_actionBanner);
             _battleScreen.Add(centerPanel);
             _battleScreen.Add(BuildUserArea());
 
@@ -176,11 +213,23 @@ namespace CoyoteBattle.Presentation
             _resultCards.style.flexDirection = FlexDirection.Row;
             _resultCards.style.flexWrap = Wrap.Wrap;
             _resultCards.style.width = Length.Percent(62);
-            _resultSummary = CreateLabel(string.Empty, 25, "result-summary");
-            _resultSummary.style.whiteSpace = WhiteSpace.Normal;
-            _resultSummary.style.width = Length.Percent(38);
+            var resultSummary = CreatePanel("result-summary");
+            resultSummary.style.width = Length.Percent(38);
+            resultSummary.style.alignItems = Align.Stretch;
+            _resultLoser = CreateLabel(string.Empty, 44, "result-loser");
+            _resultLoser.style.color = new Color(1f, 0.45f, 0.28f);
+            _resultLoser.style.unityFontStyleAndWeight = FontStyle.Bold;
+            _resultTotal = CreateLabel(string.Empty, 38, "result-total");
+            _resultDeclaration = CreateLabel(string.Empty, 30, "result-declaration");
+            _resultDeclaration.style.whiteSpace = WhiteSpace.Normal;
+            _resultDetails = CreateLabel(string.Empty, 22, "result-details");
+            _resultDetails.style.whiteSpace = WhiteSpace.Normal;
+            resultSummary.Add(_resultLoser);
+            resultSummary.Add(_resultTotal);
+            resultSummary.Add(_resultDeclaration);
+            resultSummary.Add(_resultDetails);
             resultBody.Add(_resultCards);
-            resultBody.Add(_resultSummary);
+            resultBody.Add(resultSummary);
             _resultScreen.Add(resultBody);
             _nextRoundButton = CreateButton("次のラウンドへ", StartNextRound, "next-round-button");
             _resultScreen.Add(_nextRoundButton);
@@ -254,18 +303,21 @@ namespace CoyoteBattle.Presentation
 
             _numberInput.value = string.Empty;
             _errorLabel.text = string.Empty;
+            _actionBanner.text = string.Empty;
             ShowBattle();
             ContinueNpcTurns();
         }
 
         private void StartNextRound()
         {
+            CancelPendingOperations();
             SetButtonEnabled(_nextRoundButton, false);
             if (!_game.TryStartNextRound())
             {
                 return;
             }
 
+            _actionBanner.text = string.Empty;
             ShowBattle();
             ContinueNpcTurns();
         }
@@ -315,46 +367,6 @@ namespace CoyoteBattle.Presentation
             }
         }
 
-        private void ContinueNpcTurns()
-        {
-            if (_game.State == GameFlowState.Declaring && _game.CurrentParticipantId != UserId)
-            {
-                StartCoroutine(ExecuteNpcTurns(_operationGeneration));
-            }
-        }
-
-        private IEnumerator ExecuteNpcTurns(int generation)
-        {
-            while (
-                generation == _operationGeneration
-                && _game.State == GameFlowState.Declaring
-                && _game.CurrentParticipantId != UserId
-            )
-            {
-                _statusLabel.text =
-                    $"{PresentationText.ParticipantName(_game.CurrentParticipantId)} が考え中…";
-                SetInputEnabled(false);
-                yield return new WaitForSeconds(NpcThinkingSeconds);
-                if (generation != _operationGeneration || !_game.TryExecuteCurrentNpcTurn())
-                {
-                    yield break;
-                }
-
-                if (_game.State == GameFlowState.Declaring)
-                {
-                    RefreshBattle();
-                }
-            }
-
-            if (generation == _operationGeneration)
-            {
-                if (_game.State == GameFlowState.Declaring)
-                    RefreshBattle();
-                else
-                    ShowResult();
-            }
-        }
-
         private void ShowTitle()
         {
             SetVisible(_titleScreen, true);
@@ -379,7 +391,7 @@ namespace CoyoteBattle.Presentation
             _declarationLabel.text =
                 last == null
                     ? "最初の数字を宣言してください"
-                    : $"直前の宣言：{last.Value}（{PresentationText.ParticipantName(last.ParticipantId)}）";
+                    : $"現在の宣言値：{last.Value}\n直前の宣言者：{PresentationText.ParticipantName(last.ParticipantId)}";
             _statusLabel.text =
                 _game.CurrentParticipantId == UserId
                     ? "あなたの手番"
@@ -400,44 +412,7 @@ namespace CoyoteBattle.Presentation
             var user = _game.Participants.Single(item => item.Id == UserId);
             _userLifeLabel.text = $"ライフ {user.Life}";
             _userCardLabel.text = "伏せ札";
-            SetInputEnabled(_game.CurrentParticipantId == UserId);
-        }
-
-        private void ShowResult()
-        {
-            SetVisible(_titleScreen, false);
-            SetVisible(_battleScreen, false);
-            SetVisible(_resultScreen, true);
-            var result = _game.LastRoundResult;
-            _resultCards.Clear();
-            foreach (var deal in result.DealtCards)
-            {
-                _resultCards.Add(
-                    CreateResultCard(
-                        PresentationText.ParticipantName(deal.ParticipantId),
-                        deal.Card
-                    )
-                );
-            }
-            foreach (var card in result.AdditionalCards)
-            {
-                _resultCards.Add(CreateResultCard("？の追加札", card));
-            }
-            _resultSummary.text =
-                $"最終宣言　{result.DeclaredNumber}\n"
-                + $"宣言者　{PresentationText.ParticipantName(result.NumberDeclarerId)}\n"
-                + $"コヨーテ　{PresentationText.ParticipantName(result.CoyoteDeclarerId)}\n\n"
-                + $"実合計　{result.ActualTotal}\n"
-                + $"敗者　{PresentationText.ParticipantName(result.LoserId)}\n\n"
-                + string.Join(
-                    "\n",
-                    result.Participants.Select(item =>
-                        $"{PresentationText.ParticipantName(item.Id)}：ライフ {item.Life}{(item.IsEliminated ? "（脱落）" : string.Empty)}"
-                    )
-                );
-            SetButtonEnabled(_nextRoundButton, _game.State == GameFlowState.RoundResult);
-            SetVisible(_gameOverDialog, _game.State == GameFlowState.GameOver);
-            _outcomeLabel.text = _game.Outcome == GameOutcome.UserVictory ? "勝利！" : "敗北…";
+            SetInputEnabled(!_isNpcSequenceRunning && _game.CurrentParticipantId == UserId);
         }
 
         private void ReturnToTitle()
@@ -445,12 +420,6 @@ namespace CoyoteBattle.Presentation
             CancelPendingOperations();
             _game.TryReturnToTitle();
             ShowTitle();
-        }
-
-        private void CancelPendingOperations()
-        {
-            _operationGeneration++;
-            StopAllCoroutines();
         }
 
         private void SetInputEnabled(bool enabled)
