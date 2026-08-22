@@ -31,8 +31,7 @@ namespace CoyoteBattle.Presentation
         internal static VisualElement CreateScreen(string name)
         {
             var screen = new VisualElement { name = name };
-            screen.style.position = Position.Absolute;
-            screen.style.left = screen.style.right = screen.style.top = screen.style.bottom = 0;
+            screen.style.flexGrow = 1;
             screen.style.paddingLeft = screen.style.paddingRight = 32;
             screen.style.paddingTop = screen.style.paddingBottom = 24;
             return screen;

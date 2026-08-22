@@ -14,6 +14,7 @@ namespace CoyoteBattle.Presentation
         /// </summary>
         private void ShowResult()
         {
+            HideCardInformation();
             SetVisible(_titleScreen, false);
             SetVisible(_battleScreen, false);
             SetVisible(_resultScreen, true);
