@@ -34,5 +34,12 @@ namespace CoyoteBattle.Domain
 
             return Thresholds[index];
         }
+
+        protected override int GetMaximumRaise(NpcObservation observation, double threshold)
+        {
+            return threshold <= 0.20d ? 4
+                : threshold <= 0.50d ? 2
+                : 1;
+        }
     }
 }

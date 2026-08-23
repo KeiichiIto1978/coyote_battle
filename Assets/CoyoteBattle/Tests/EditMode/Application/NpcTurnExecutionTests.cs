@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using CoyoteBattle.Domain;
 using NUnit.Framework;
@@ -32,6 +33,77 @@ namespace CoyoteBattle.Application.Tests
                 observation.VisibleCards.Any(item => item.ParticipantId == "npc-1"),
                 Is.False
             );
+        }
+
+        /// <summary>
+        /// 次ラウンドのNPC観測が、カード情報表示と同じ使用済み札状態を参照することを保証します。
+        /// </summary>
+        [Test]
+        public void TryCreateCurrentNpcObservation_通常ラウンド後のnpc1手番である_カード情報と同じ使用済み枚数を返す()
+        {
+            var service = new GameFlowService(
+                new FirstZeroThenIdentityRandomSource(),
+                new ZeroRandomSource()
+            );
+            Assert.That(service.TryStartNewGame(), Is.True);
+            Assert.That(service.TryDeclareNumber("user", int.MaxValue), Is.True);
+            Assert.That(service.TryDeclareCoyote("npc-1"), Is.True);
+            Assert.That(service.TryStartNextRound(), Is.True);
+            Assert.That(service.TryDeclareNumber("user", 1), Is.True);
+
+            var succeeded = service.TryCreateCurrentNpcObservation(out var observation);
+
+            Assert.That(succeeded, Is.True);
+            Assert.That(observation.DiscardedCards.Sum(item => item.Count), Is.EqualTo(5));
+            foreach (var discardedCard in observation.DiscardedCards)
+            {
+                Assert.That(
+                    service
+                        .CardInformation.Single(item =>
+                            item.Kind == discardedCard.Kind && item.Value == discardedCard.Value
+                        )
+                        .DiscardedCount,
+                    Is.EqualTo(discardedCard.Count)
+                );
+            }
+        }
+
+        /// <summary>
+        /// 夜カードで全山札を再構築した後、NPC観測の使用済み札も0へ戻ることを保証します。
+        /// </summary>
+        [Test]
+        public void TryCreateCurrentNpcObservation_夜カードによる再構築後である_使用済み札を空で返す()
+        {
+            var service = new GameFlowService(
+                new FirstZeroThenIdentityRandomSource(),
+                new ZeroRandomSource()
+            );
+            Assert.That(service.TryStartNewGame(), Is.True);
+            var loserIds = new[] { "npc-1", "npc-2", "npc-3", "npc-4", "user", "npc-1" };
+            foreach (var loserId in loserIds)
+            {
+                LoseParticipant(service, loserId);
+                Assert.That(service.TryStartNextRound(), Is.True);
+            }
+
+            Assert.That(service.CardInformation.Sum(item => item.DiscardedCount), Is.EqualTo(30));
+            LoseParticipant(service, "npc-2");
+            Assert.That(service.CardInformation.Sum(item => item.DiscardedCount), Is.Zero);
+            Assert.That(
+                service.TryStartNextRound(),
+                Is.True,
+                $"state={service.State}, outcome={service.Outcome}, "
+                    + $"loser={service.LastRoundResult?.LoserId}"
+            );
+            if (service.CurrentParticipantId == "user")
+            {
+                Assert.That(service.TryDeclareNumber("user", 1), Is.True);
+            }
+
+            var succeeded = service.TryCreateCurrentNpcObservation(out var observation);
+
+            Assert.That(succeeded, Is.True);
+            Assert.That(observation.DiscardedCards, Is.Empty);
         }
 
         /// <summary>
@@ -144,6 +216,25 @@ namespace CoyoteBattle.Application.Tests
             {
                 CallCount++;
                 return _value;
+            }
+        }
+
+        private sealed class FirstZeroThenIdentityRandomSource : IRandomSource
+        {
+            private bool _hasReturnedStarter;
+
+            /// <summary>
+            /// 最初はユーザー開始位置、以後は交換しない位置を返します。
+            /// </summary>
+            public int Next(int exclusiveUpperBound)
+            {
+                if (!_hasReturnedStarter)
+                {
+                    _hasReturnedStarter = true;
+                    return 0;
+                }
+
+                return exclusiveUpperBound - 1;
             }
         }
     }

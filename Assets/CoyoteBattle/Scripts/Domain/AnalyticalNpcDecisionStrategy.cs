@@ -19,6 +19,13 @@ namespace CoyoteBattle.Domain
             return CalculateRequiredProbability(observation);
         }
 
+        protected override int GetMaximumRaise(NpcObservation observation, double threshold)
+        {
+            return threshold < 0.50d ? 3
+                : threshold < 0.70d ? 2
+                : 1;
+        }
+
         /// <summary>
         /// ライフ、履歴、残存人数の補正後に要求する成立確率を返します。
         /// </summary>

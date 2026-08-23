@@ -12,6 +12,7 @@ namespace CoyoteBattle.Domain
         private readonly IReadOnlyList<NpcParticipantObservation> _participants;
         private readonly IReadOnlyList<string> _remainingParticipantIds;
         private readonly IReadOnlyList<CardDeal> _visibleCards;
+        private readonly IReadOnlyList<NpcDiscardedCardCount> _discardedCards;
         private readonly IReadOnlyList<NumberDeclaration> _declarationHistory;
 
         /// <summary>
@@ -22,12 +23,14 @@ namespace CoyoteBattle.Domain
         /// <param name="remainingParticipantIds">現ラウンドの残存参加者です。</param>
         /// <param name="visibleCards">行動NPC自身を除く残存参加者のカードです。</param>
         /// <param name="declarationHistory">現ラウンドで成功した数字宣言履歴です。</param>
+        /// <param name="discardedCards">現在の使用済み札を種類と値で集約した一覧です。</param>
         public NpcObservation(
             string actorId,
             IReadOnlyList<NpcParticipantObservation> participants,
             IReadOnlyList<string> remainingParticipantIds,
             IReadOnlyList<CardDeal> visibleCards,
-            IReadOnlyList<NumberDeclaration> declarationHistory
+            IReadOnlyList<NumberDeclaration> declarationHistory,
+            IReadOnlyList<NpcDiscardedCardCount> discardedCards
         )
         {
             ActorId = ValidateActor(actorId, participants);
@@ -38,6 +41,8 @@ namespace CoyoteBattle.Domain
                 remainingParticipantIds
             );
             _visibleCards = ValidateVisibleCards(ActorId, _remainingParticipantIds, visibleCards);
+            _discardedCards = ValidateDiscardedCards(discardedCards);
+            ValidateCardAvailability(_visibleCards, _discardedCards);
             _declarationHistory = ValidateHistory(
                 ActorId,
                 _remainingParticipantIds,
@@ -80,6 +85,11 @@ namespace CoyoteBattle.Domain
         /// 行動NPC自身を除く残存参加者のカードを取得します。
         /// </summary>
         public IReadOnlyList<CardDeal> VisibleCards => _visibleCards;
+
+        /// <summary>
+        /// 現在の使用済み札を種類と値ごとに集約した一覧を取得します。
+        /// </summary>
+        public IReadOnlyList<NpcDiscardedCardCount> DiscardedCards => _discardedCards;
 
         /// <summary>
         /// 現ラウンドで成功した数字宣言履歴を取得します。
@@ -283,6 +293,59 @@ namespace CoyoteBattle.Domain
             }
 
             return declarationHistory.ToList().AsReadOnly();
+        }
+
+        private static IReadOnlyList<NpcDiscardedCardCount> ValidateDiscardedCards(
+            IReadOnlyList<NpcDiscardedCardCount> discardedCards
+        )
+        {
+            if (discardedCards == null)
+            {
+                throw new ArgumentNullException(nameof(discardedCards));
+            }
+
+            if (
+                discardedCards.Any(item => item == null)
+                || discardedCards
+                    .GroupBy(item => new { item.Kind, item.Value })
+                    .Any(group => group.Count() > 1)
+            )
+            {
+                throw new ArgumentException(
+                    "使用済み札はカード面ごとに重複なく指定してください。",
+                    nameof(discardedCards)
+                );
+            }
+
+            return discardedCards.ToList().AsReadOnly();
+        }
+
+        private static void ValidateCardAvailability(
+            IReadOnlyList<CardDeal> visibleCards,
+            IReadOnlyList<NpcDiscardedCardCount> discardedCards
+        )
+        {
+            var exceedsInitialCount = DefaultDeckFactory
+                .Create()
+                .GroupBy(card => new { card.Kind, card.Value })
+                .Any(group =>
+                    visibleCards.Count(deal =>
+                        deal.Card.Kind == group.Key.Kind && deal.Card.Value == group.Key.Value
+                    )
+                        + discardedCards
+                            .Where(item =>
+                                item.Kind == group.Key.Kind && item.Value == group.Key.Value
+                            )
+                            .Sum(item => item.Count)
+                    > group.Count()
+                );
+            if (exceedsInitialCount)
+            {
+                throw new ArgumentException(
+                    "公開カードと使用済み札が既定山札の種類別枚数を超えています。",
+                    nameof(discardedCards)
+                );
+            }
         }
     }
 }

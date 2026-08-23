@@ -79,6 +79,43 @@ namespace CoyoteBattle.Domain.Tests
                 () => ((IList<NpcParticipantObservation>)observation.Participants).RemoveAt(0),
                 Throws.TypeOf<NotSupportedException>()
             );
+            Assert.That(
+                () =>
+                    ((IList<NpcDiscardedCardCount>)observation.DiscardedCards).Add(
+                        new NpcDiscardedCardCount(CardKind.Number, 20, 1)
+                    ),
+                Throws.TypeOf<NotSupportedException>()
+            );
+        }
+
+        /// <summary>
+        /// 既定山札の枚数を超える使用済み札集計を、推定前に不正入力として拒否することを保証します。
+        /// </summary>
+        [Test]
+        public void NpcDiscardedCardCount_20を2枚指定する_入力エラーになる()
+        {
+            Assert.That(
+                () => new NpcDiscardedCardCount(CardKind.Number, 20, 2),
+                Throws.TypeOf<ArgumentOutOfRangeException>()
+            );
+        }
+
+        /// <summary>
+        /// 同じカード面を複数要素へ分割した使用済み札観測を拒否することを保証します。
+        /// </summary>
+        [Test]
+        public void Constructor_使用済み20を重複して指定する_入力エラーになる()
+        {
+            var discardedCards = new[]
+            {
+                new NpcDiscardedCardCount(CardKind.Number, 20, 1),
+                new NpcDiscardedCardCount(CardKind.Number, 20, 1),
+            };
+
+            Assert.That(
+                () => CreateObservation(discardedCards: discardedCards),
+                Throws.ArgumentException
+            );
         }
 
         /// <summary>

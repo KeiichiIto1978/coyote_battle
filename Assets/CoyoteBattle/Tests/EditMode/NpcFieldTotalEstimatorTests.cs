@@ -118,5 +118,80 @@ namespace CoyoteBattle.Domain.Tests
                 Throws.ArgumentException
             );
         }
+
+        /// <summary>
+        /// 使用済みの20を伏せ札と疑問カードの追加札の両候補から除外することを保証します。
+        /// </summary>
+        [Test]
+        public void Estimate_20が使用済みで疑問カード候補になり得る_最大推定値を30にする()
+        {
+            var cards = new[]
+            {
+                new CardDeal("user", Card.CreateSpecial(100, CardKind.Double)),
+                new CardDeal("npc-2", Card.CreateNumber(101, 5)),
+                new CardDeal("npc-3", Card.CreateNumber(102, -5)),
+                new CardDeal("npc-4", Card.CreateNumber(103, 0)),
+            };
+            var discardedCards = new[] { new NpcDiscardedCardCount(CardKind.Number, 20, 1) };
+
+            var distribution = new NpcFieldTotalEstimator().Estimate(
+                CreateObservation(visibleCards: cards, discardedCards: discardedCards)
+            );
+
+            Assert.That(distribution.Probabilities.Keys.Max(), Is.EqualTo(30));
+        }
+
+        /// <summary>
+        /// 1枚物の20が公開札と使用済み札に重複する不正観測を拒否することを保証します。
+        /// </summary>
+        [Test]
+        public void Estimate_20が公開札と使用済み札に存在する_入力エラーになる()
+        {
+            Assert.That(
+                () =>
+                    CreateObservation(
+                        discardedCards: new[] { new NpcDiscardedCardCount(CardKind.Number, 20, 1) }
+                    ),
+                Throws.ArgumentException
+            );
+        }
+
+        /// <summary>
+        /// 未使用候補が疑問カード1枚だけなら、追加札時に再構築される使用済み札から分布を作ることを保証します。
+        /// </summary>
+        [Test]
+        public void Estimate_使用済み31枚で伏せ札候補が疑問カードだけである_再構築後の追加札分布を返す()
+        {
+            var defaultCards = DefaultDeckFactory.Create();
+            var participantIds = new[] { "user", "npc-2", "npc-3", "npc-4" };
+            var visibleCards = defaultCards
+                .Take(4)
+                .Select((card, index) => new CardDeal(participantIds[index], card))
+                .ToList()
+                .AsReadOnly();
+            var discardedCards = defaultCards
+                .Skip(4)
+                .Take(31)
+                .GroupBy(card => new { card.Kind, card.Value })
+                .Select(group => new NpcDiscardedCardCount(
+                    group.Key.Kind,
+                    group.Key.Value,
+                    group.Count()
+                ))
+                .ToList()
+                .AsReadOnly();
+
+            var distribution = new NpcFieldTotalEstimator().Estimate(
+                CreateObservation(visibleCards: visibleCards, discardedCards: discardedCards)
+            );
+
+            Assert.That(distribution.Probabilities, Is.Not.Empty);
+            Assert.That(distribution.Probabilities.Values.Sum(), Is.EqualTo(1d).Within(0.0000001d));
+            Assert.That(distribution.Probabilities.Keys.Max(), Is.EqualTo(120));
+            Assert.That(
+                distribution.ProbabilityAtLeast(120),
+                Is.EqualTo(1d / 31d).Within(0.0000001d)
+            );
+        }
     }
 }
