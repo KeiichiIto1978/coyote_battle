@@ -37,13 +37,11 @@ namespace CoyoteBattle.Editor
             }
 
             Directory.CreateDirectory(outputDirectory);
-            var buildPlayerOptions = new BuildPlayerOptions
-            {
-                scenes = scenePaths,
-                locationPathName = outputPath,
-                target = BuildTarget.Android,
-                options = BuildOptions.Development,
-            };
+            ConfigureAndroidBuild();
+            BuildPlayerOptions buildPlayerOptions = CreateBuildPlayerOptions(
+                outputPath,
+                scenePaths
+            );
 
             BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);
             if (report.summary.result != BuildResult.Succeeded)
@@ -52,6 +50,31 @@ namespace CoyoteBattle.Editor
                     $"Android Developmentビルドに失敗しました: {report.summary.result}"
                 );
             }
+        }
+
+        /// <summary>
+        /// APK出力先とシーンを入力として、Android Development専用のビルド設定を返します。
+        /// </summary>
+        public static BuildPlayerOptions CreateBuildPlayerOptions(
+            string outputPath,
+            string[] scenePaths
+        )
+        {
+            return new BuildPlayerOptions
+            {
+                scenes = scenePaths,
+                locationPathName = outputPath,
+                target = BuildTarget.Android,
+                options = BuildOptions.Development,
+            };
+        }
+
+        /// <summary>
+        /// Android出力形式を本人端末へ直接導入できるAPKへ固定します。
+        /// </summary>
+        public static void ConfigureAndroidBuild()
+        {
+            EditorUserBuildSettings.buildAppBundle = false;
         }
 
         /// <summary>

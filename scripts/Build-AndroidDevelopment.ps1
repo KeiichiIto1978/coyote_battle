@@ -99,12 +99,37 @@ try
     }
 
     $resolvedOutputPath = [System.IO.Path]::GetFullPath($OutputPath)
+    $buildEvidencePath = "$resolvedOutputPath.build.json"
     $logPath = Join-Path $resolvedProjectPath 'Logs\AndroidDevelopmentBuild.log'
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $logPath) | Out-Null
 
     if (Test-Path -LiteralPath $resolvedOutputPath -PathType Leaf)
     {
         Remove-Item -LiteralPath $resolvedOutputPath -Force
+    }
+    if (Test-Path -LiteralPath $buildEvidencePath -PathType Leaf)
+    {
+        Remove-Item -LiteralPath $buildEvidencePath -Force
+    }
+
+    $gitProjectPath = $resolvedProjectPath
+    if ($gitProjectPath -match '^[A-Za-z]:\\$')
+    {
+        $gitProjectPath += '.'
+    }
+    $commitSha = (& git -C $gitProjectPath rev-parse HEAD 2>$null | Select-Object -First 1).Trim()
+    if ($LASTEXITCODE -ne 0 -or $commitSha -notmatch '^[0-9a-fA-F]{40}$')
+    {
+        throw 'Could not determine the current commit SHA.'
+    }
+    & git -C $gitProjectPath diff-index --quiet HEAD --
+    if ($LASTEXITCODE -eq 1)
+    {
+        throw 'Tracked changes exist. Commit them before building the Development APK.'
+    }
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw 'Could not inspect the worktree state.'
     }
 
     $buildStartedAt = [DateTime]::UtcNow
@@ -142,8 +167,17 @@ try
         throw "Generated APK was not updated by the current build: $resolvedOutputPath"
     }
 
+    $apkHash = (Get-FileHash -LiteralPath $apk.FullName -Algorithm SHA256).Hash.ToUpperInvariant()
+    [pscustomobject][ordered]@{
+        BuiltAtUtc = [DateTime]::UtcNow.ToString('o')
+        CommitSha = $commitSha.ToLowerInvariant()
+        ApkSize = $apk.Length
+        ApkSha256 = $apkHash
+    } | ConvertTo-Json | Set-Content -LiteralPath $buildEvidencePath -Encoding UTF8
+
     Write-Output "Android Development APK succeeded ($($apk.Length) bytes)."
     Write-Output "Artifact: $resolvedOutputPath"
+    Write-Output "Build evidence: $buildEvidencePath"
 }
 catch
 {

@@ -60,6 +60,10 @@ jobs:
           bash scripts/tests/git-hook-tests.sh
           bash scripts/tests/pr-test-evidence-tests.sh
 
+      - name: Test Android device deployment safety
+        shell: pwsh
+        run: ./scripts/tests/android-device-deployment-tests.ps1
+
       - name: Verify local EditMode evidence
         if: github.event_name == 'pull_request'
         env:

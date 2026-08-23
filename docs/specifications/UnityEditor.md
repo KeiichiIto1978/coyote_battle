@@ -27,8 +27,11 @@ Editor更新に不要なPackage更新、`Library/`、`Logs/`、`TestResults/`、
 - コンパイルエラーと未解決のPackageエラーがないこと。
 - `Assets/CoyoteBattle/Scenes/Bootstrap.unity`が有効なビルド対象として読み込めること。
 - Android Development APKの既存ファイルを成功扱いせず、現在の実行で更新された非空ファイルが生成されること。
+- 実機導入は端末を1台だけ接続し、`Install-AndroidDevelopment.ps1`でAPI 25以上、ARM64、ADB認証済みを確認してから行うこと。
 
 Android Toolsは非ASCII文字を含むプロジェクトパスを拒否する。該当する環境では、READMEの手順でworktreeを未使用の一時ASCIIドライブへ割り当てる。既存の割り当てを上書きせず、この手順で作成した割り当てだけをビルド後に解除する。ビルドスクリプトはASCIIだけで構成された空白入りパスも正しく引用してUnityへ渡す。
+
+ADB導入スクリプトは端末0台、複数台、`unauthorized`、`offline`、API／ABI非対応でインストールしない。失敗時に自動アンインストールせず、ADB serialをログと証跡へ残さない。
 
 ## UBA検証
 

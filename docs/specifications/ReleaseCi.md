@@ -26,6 +26,9 @@
 | Builder OS | Windows 11 24H2 |
 | Machine | MICRO |
 | Android SDK | 35 |
+| Minimum API Level | 25（Android 7.1） |
+| Target API Level | 35 |
+| Target Architecture | ARM64のみ |
 | Bundle ID | `com.keiichiito.coyotebattle` |
 | Credentials | Auto-generated debug keystore |
 | Auto-build | 有効 |
@@ -81,5 +84,6 @@ Build #1ではGitHubから`release`を取得してUnityを起動できたが、B
 
 - UBAは`release`へのマージ後に起動するため、マージ自体は阻止しない。
 - 初期成果物は自動生成デバッグkeystoreで署名した検証用APKであり、Google Playへ公開しない。
+- 初版の限定配布では、成功したAPKを信頼できる家族、友人、知人へ非公開経路で直接共有する。配布条件と証跡は`AndroidDistribution.md`に従う。
 - 本番署名、AAB、Google Play配布は、秘密鍵の保管・権限・ローテーションを別途設計してから導入する。
 - Unity Editorは`ProjectSettings/ProjectVersion.txt`で指定した`6000.3.21f1`を完全一致で使用する。`Build with closest version`は有効化しない。
