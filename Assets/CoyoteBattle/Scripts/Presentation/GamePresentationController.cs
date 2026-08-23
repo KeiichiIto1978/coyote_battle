@@ -9,7 +9,7 @@ using static CoyoteBattle.Presentation.PresentationUiFactory;
 namespace CoyoteBattle.Presentation
 {
     /// <summary>
-    /// Applicationの状態を4画面へ投影し、ユーザー操作とNPC自動進行を仲介します。
+    /// Applicationの状態を5画面へ投影し、ユーザー操作とNPC自動進行を仲介します。
     /// </summary>
     [DisallowMultipleComponent]
     public sealed partial class GamePresentationController : MonoBehaviour
@@ -147,7 +147,7 @@ namespace CoyoteBattle.Presentation
             settings.themeStyleSheet = themeStyleSheet;
             settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
             settings.referenceResolution = new Vector2Int(1920, 1080);
-            settings.match = 0.5f;
+            settings.match = SafeAreaPaddingCalculator.PanelMatchWidthOrHeight;
             settings.sortingOrder = 10;
             return settings;
         }
@@ -173,6 +173,7 @@ namespace CoyoteBattle.Presentation
             start.style.width = 360;
             start.style.height = 76;
             _titleScreen.Add(start);
+            BuildRulesScreen();
 
             _battleScreen = CreateScreen("battle-screen");
             _battleScreen.style.flexDirection = FlexDirection.Row;
@@ -270,6 +271,7 @@ namespace CoyoteBattle.Presentation
             );
 
             _root.Add(_titleScreen);
+            _root.Add(_rulesScreen);
             _root.Add(_battleScreen);
             _root.Add(_resultScreen);
             _root.Add(_gameOverDialog);
@@ -396,6 +398,7 @@ namespace CoyoteBattle.Presentation
             HideCardInformation();
             _bgmPlayer.SetTrack(BgmTrack.Title);
             SetVisible(_titleScreen, true);
+            SetVisible(_rulesScreen, false);
             SetVisible(_battleScreen, false);
             SetVisible(_resultScreen, false);
             SetVisible(_gameOverDialog, false);
@@ -405,6 +408,7 @@ namespace CoyoteBattle.Presentation
         {
             _bgmPlayer.SetTrack(BgmTrack.Battle);
             SetVisible(_titleScreen, false);
+            SetVisible(_rulesScreen, false);
             SetVisible(_battleScreen, true);
             SetVisible(_resultScreen, false);
             SetVisible(_gameOverDialog, false);

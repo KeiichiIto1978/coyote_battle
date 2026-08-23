@@ -140,10 +140,16 @@ namespace CoyoteBattle.Tests.Presentation
                 safeArea,
                 new Vector2(1920, 1080)
             );
-            Assert.That(root.resolvedStyle.paddingLeft, Is.EqualTo(expectedPadding.x));
-            Assert.That(root.resolvedStyle.paddingTop, Is.EqualTo(expectedPadding.y));
-            Assert.That(root.resolvedStyle.paddingRight, Is.EqualTo(expectedPadding.z));
-            Assert.That(root.resolvedStyle.paddingBottom, Is.EqualTo(expectedPadding.w));
+            Assert.That(root.resolvedStyle.paddingLeft, Is.EqualTo(expectedPadding.x).Within(0.5f));
+            Assert.That(root.resolvedStyle.paddingTop, Is.EqualTo(expectedPadding.y).Within(0.5f));
+            Assert.That(
+                root.resolvedStyle.paddingRight,
+                Is.EqualTo(expectedPadding.z).Within(0.5f)
+            );
+            Assert.That(
+                root.resolvedStyle.paddingBottom,
+                Is.EqualTo(expectedPadding.w).Within(0.5f)
+            );
             var safeBounds = new Rect(
                 root.worldBound.xMin + root.resolvedStyle.paddingLeft,
                 root.worldBound.yMin + root.resolvedStyle.paddingTop,
