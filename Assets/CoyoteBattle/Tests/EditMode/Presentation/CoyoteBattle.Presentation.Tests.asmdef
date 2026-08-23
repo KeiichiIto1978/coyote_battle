@@ -5,6 +5,7 @@
     "CoyoteBattle.Domain",
     "CoyoteBattle.Application",
     "CoyoteBattle.Presentation",
+    "CoyoteBattle.Editor",
     "UnityEngine.AudioModule"
   ],
   "optionalUnityReferences": [

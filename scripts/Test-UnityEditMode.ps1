@@ -74,7 +74,13 @@ function ConvertTo-QuotedArgument
 {
     param([string]$Value)
 
-    return '"' + $Value.Replace('"', '\"') + '"'
+    $normalizedValue = $Value
+    if ($normalizedValue -match '^[A-Za-z]:\\$')
+    {
+        $normalizedValue += '.'
+    }
+
+    return '"' + $normalizedValue.Replace('"', '\"') + '"'
 }
 
 try
