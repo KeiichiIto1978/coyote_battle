@@ -128,6 +128,7 @@ namespace CoyoteBattle.Presentation
         private void OnDestroy()
         {
             CancelPendingOperations();
+            DetachBgmControls();
             if (_document != null && _document.panelSettings != null)
             {
                 Destroy(_document.panelSettings);
@@ -272,6 +273,7 @@ namespace CoyoteBattle.Presentation
             _root.Add(_battleScreen);
             _root.Add(_resultScreen);
             _root.Add(_gameOverDialog);
+            BuildBgmControls();
         }
 
         private VisualElement BuildUserArea()
