@@ -16,6 +16,7 @@ namespace CoyoteBattle.Presentation
         {
             HideCardInformation();
             SetVisible(_titleScreen, false);
+            SetVisible(_rulesScreen, false);
             SetVisible(_battleScreen, false);
             SetVisible(_resultScreen, true);
             var result = _game.LastRoundResult;

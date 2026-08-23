@@ -10,7 +10,7 @@ namespace CoyoteBattle.Tests.Presentation
     public sealed class SafeAreaPaddingCalculatorTests
     {
         [Test]
-        public void Calculate_横長画面の左右100ピクセル_基準解像度へ換算する()
+        public void Calculate_横長画面の左右100ピクセル_パネルの単一スケールで換算する()
         {
             var padding = SafeAreaPaddingCalculator.Calculate(
                 2400,
@@ -19,7 +19,31 @@ namespace CoyoteBattle.Tests.Presentation
                 new Vector2(1920, 1080)
             );
 
-            Assert.That(padding, Is.EqualTo(new Vector4(80, 0, 80, 0)));
+            var expected = 100f / Mathf.Sqrt(1.25f);
+            Assert.That(padding.x, Is.EqualTo(expected).Within(0.001f));
+            Assert.That(padding.y, Is.Zero);
+            Assert.That(padding.z, Is.EqualTo(expected).Within(0.001f));
+            Assert.That(padding.w, Is.Zero);
+        }
+
+        /// <summary>
+        /// 非対称なノッチも全辺を同じパネルスケールで換算することを保証します。
+        /// </summary>
+        [Test]
+        public void Calculate_非対称な四辺余白_各辺の物理ピクセル数を保つ()
+        {
+            var padding = SafeAreaPaddingCalculator.Calculate(
+                2400,
+                1080,
+                new Rect(120, 43, 2208, 1015),
+                new Vector2(1920, 1080)
+            );
+
+            var panelScale = Mathf.Sqrt(1.25f);
+            Assert.That(padding.x * panelScale, Is.EqualTo(120f).Within(0.001f));
+            Assert.That(padding.y * panelScale, Is.EqualTo(22f).Within(0.001f));
+            Assert.That(padding.z * panelScale, Is.EqualTo(72f).Within(0.001f));
+            Assert.That(padding.w * panelScale, Is.EqualTo(43f).Within(0.001f));
         }
 
         [Test]

@@ -9,6 +9,11 @@ namespace CoyoteBattle.Presentation
     public static class SafeAreaPaddingCalculator
     {
         /// <summary>
+        /// PanelSettingsの幅と高さを同率で混合する基準値です。
+        /// </summary>
+        internal const float PanelMatchWidthOrHeight = 0.5f;
+
+        /// <summary>
         /// 左、上、右、下の順で基準解像度上の余白を返します。
         /// </summary>
         /// <param name="screenWidth">端末画面のピクセル幅です。</param>
@@ -28,13 +33,22 @@ namespace CoyoteBattle.Presentation
                 throw new ArgumentOutOfRangeException(nameof(screenWidth));
             }
 
-            var widthScale = referenceResolution.x / screenWidth;
-            var heightScale = referenceResolution.y / screenHeight;
+            var widthRatio = screenWidth / referenceResolution.x;
+            var heightRatio = screenHeight / referenceResolution.y;
+            var panelScale = Mathf.Pow(
+                2f,
+                Mathf.Lerp(
+                    Mathf.Log(widthRatio, 2f),
+                    Mathf.Log(heightRatio, 2f),
+                    PanelMatchWidthOrHeight
+                )
+            );
+            var pixelToPanelScale = 1f / panelScale;
             return new Vector4(
-                safeArea.xMin * widthScale,
-                (screenHeight - safeArea.yMax) * heightScale,
-                (screenWidth - safeArea.xMax) * widthScale,
-                safeArea.yMin * heightScale
+                safeArea.xMin * pixelToPanelScale,
+                (screenHeight - safeArea.yMax) * pixelToPanelScale,
+                (screenWidth - safeArea.xMax) * pixelToPanelScale,
+                safeArea.yMin * pixelToPanelScale
             );
         }
     }
