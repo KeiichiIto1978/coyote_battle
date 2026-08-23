@@ -16,5 +16,10 @@ namespace CoyoteBattle.Domain
         {
             return 0.75d;
         }
+
+        protected override int GetMaximumRaise(NpcObservation observation, double threshold)
+        {
+            return 1;
+        }
     }
 }

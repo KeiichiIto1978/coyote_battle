@@ -13,7 +13,9 @@ namespace CoyoteBattle.Domain.Tests
             IReadOnlyList<CardDeal> visibleCards = null,
             IReadOnlyList<int> declarations = null,
             int actorLife = 3,
-            IReadOnlyList<string> remainingIds = null
+            int userLife = 3,
+            IReadOnlyList<string> remainingIds = null,
+            IReadOnlyList<NpcDiscardedCardCount> discardedCards = null
         )
         {
             var activeIds = remainingIds ?? new[] { "user", "npc-1", "npc-2", "npc-3", "npc-4" };
@@ -22,7 +24,7 @@ namespace CoyoteBattle.Domain.Tests
                 new NpcParticipantObservation(
                     "user",
                     ParticipantKind.User,
-                    activeIds.Contains("user") ? 3 : 0
+                    activeIds.Contains("user") ? userLife : 0
                 ),
                 new NpcParticipantObservation(
                     "npc-1",
@@ -63,7 +65,14 @@ namespace CoyoteBattle.Domain.Tests
                 }
             }
 
-            return new NpcObservation(actorId, participants, activeIds, cards, phase.History);
+            return new NpcObservation(
+                actorId,
+                participants,
+                activeIds,
+                cards,
+                phase.History,
+                discardedCards ?? new NpcDiscardedCardCount[0]
+            );
         }
 
         private static IReadOnlyList<CardDeal> CreateDefaultVisibleCards(

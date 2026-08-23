@@ -237,12 +237,22 @@ namespace CoyoteBattle.Application
                 .Where(deal => deal.ParticipantId != actor.Id)
                 .ToList()
                 .AsReadOnly();
+            var discardedCards = _deck
+                .DiscardPile.GroupBy(card => new { card.Kind, card.Value })
+                .Select(group => new NpcDiscardedCardCount(
+                    group.Key.Kind,
+                    group.Key.Value,
+                    group.Count()
+                ))
+                .ToList()
+                .AsReadOnly();
             observation = new NpcObservation(
                 actor.Id,
                 participants,
                 remainingIds,
                 visibleCards,
-                _declarationPhase.History
+                _declarationPhase.History,
+                discardedCards
             );
             return true;
         }

@@ -28,6 +28,106 @@ namespace CoyoteBattle.Domain.Tests
         }
 
         /// <summary>
+        /// 強気型が支持可能な最大値へ飛ばず、直前値から3だけ上げることを保証します。
+        /// </summary>
+        [Test]
+        public void Decide_強気型で5が宣言済みである_8を宣言する()
+        {
+            var decision = new AggressiveNpcDecisionStrategy(new NpcFieldTotalEstimator()).Decide(
+                CreateObservation(declarations: new[] { 5 })
+            );
+
+            Assert.That(decision.Kind, Is.EqualTo(NpcDecisionKind.Number));
+            Assert.That(decision.Number, Is.EqualTo(8));
+        }
+
+        /// <summary>
+        /// 初手では0を基準にし、強気型は3、慎重型は1まで上げることを保証します。
+        /// </summary>
+        [Test]
+        public void Decide_強気型と慎重型の初手である_0を基準に3と1を宣言する()
+        {
+            var observation = CreateObservation();
+
+            var aggressive = new AggressiveNpcDecisionStrategy(new NpcFieldTotalEstimator()).Decide(
+                observation
+            );
+            var cautious = new CautiousNpcDecisionStrategy(new NpcFieldTotalEstimator()).Decide(
+                observation
+            );
+
+            Assert.That(aggressive.Number, Is.EqualTo(3));
+            Assert.That(cautious.Number, Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// 慎重型が支持可能な最大値へ飛ばず、直前値から1だけ上げることを保証します。
+        /// </summary>
+        [Test]
+        public void Decide_慎重型で5が宣言済みである_6を宣言する()
+        {
+            var decision = new CautiousNpcDecisionStrategy(new NpcFieldTotalEstimator()).Decide(
+                CreateObservation(declarations: new[] { 5 })
+            );
+
+            Assert.That(decision.Kind, Is.EqualTo(NpcDecisionKind.Number));
+            Assert.That(decision.Number, Is.EqualTo(6));
+        }
+
+        /// <summary>
+        /// ギャンブル型が選んだ成立確率に対応して、上げ幅4、2、1を使うことを保証します。
+        /// </summary>
+        [TestCase(0, 9)]
+        [TestCase(1, 7)]
+        [TestCase(2, 6)]
+        public void Decide_ギャンブル型で5が宣言済みである_閾値別の上げ幅を使う(
+            int randomValue,
+            int expectedNumber
+        )
+        {
+            var decision = new GamblingNpcDecisionStrategy(
+                new NpcFieldTotalEstimator(),
+                new FixedRandomSource(randomValue)
+            ).Decide(CreateObservation(declarations: new[] { 5 }));
+
+            Assert.That(decision.Kind, Is.EqualTo(NpcDecisionKind.Number));
+            Assert.That(decision.Number, Is.EqualTo(expectedNumber));
+        }
+
+        /// <summary>
+        /// 分析型が50%以上70%未満の成立確率では、直前値から2だけ上げることを保証します。
+        /// </summary>
+        [Test]
+        public void Decide_分析型の要求確率が55パーセントで5が宣言済みである_7を宣言する()
+        {
+            var decision = new AnalyticalNpcDecisionStrategy(new NpcFieldTotalEstimator()).Decide(
+                CreateObservation(declarations: new[] { 5 })
+            );
+
+            Assert.That(decision.Kind, Is.EqualTo(NpcDecisionKind.Number));
+            Assert.That(decision.Number, Is.EqualTo(7));
+        }
+
+        /// <summary>
+        /// 分析型が50%未満では3、70%以上では1を最大上げ幅に使うことを保証します。
+        /// </summary>
+        [Test]
+        public void Decide_分析型の要求確率が45と70パーセントである_上げ幅3と1を使う()
+        {
+            var strategy = new AnalyticalNpcDecisionStrategy(new NpcFieldTotalEstimator());
+
+            var boldDecision = strategy.Decide(
+                CreateObservation(declarations: new[] { 5 }, userLife: 1)
+            );
+            var carefulDecision = strategy.Decide(
+                CreateObservation(declarations: new[] { 5 }, actorLife: 1)
+            );
+
+            Assert.That(boldDecision.Number, Is.EqualTo(8));
+            Assert.That(carefulDecision.Number, Is.EqualTo(6));
+        }
+
+        /// <summary>
         /// int上限後は全タイプがオーバーフローせずコヨーテを選ぶことを保証します。
         /// </summary>
         [Test]

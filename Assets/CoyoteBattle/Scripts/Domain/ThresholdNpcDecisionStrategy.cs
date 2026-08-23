@@ -20,7 +20,7 @@ namespace CoyoteBattle.Domain
         }
 
         /// <summary>
-        /// 現在値より大きく閾値を満たす最大値、またはコヨーテを返します。
+        /// 閾値を満たす最大値を上限に、性格別の上げ幅で数字またはコヨーテを返します。
         /// </summary>
         public NpcDecision Decide(NpcObservation observation)
         {
@@ -53,7 +53,20 @@ namespace CoyoteBattle.Domain
                 .Max();
             if (candidate != int.MinValue)
             {
-                return NpcDecision.DeclareNumber(candidate);
+                var maximumRaise = GetMaximumRaise(observation, threshold);
+                if (maximumRaise < 1)
+                {
+                    throw new InvalidOperationException(
+                        "宣言の最大上げ幅は1以上である必要があります。"
+                    );
+                }
+
+                var currentValue = observation.CurrentDeclaration?.Value ?? 0;
+                var maximumAllowed =
+                    currentValue > int.MaxValue - maximumRaise
+                        ? int.MaxValue
+                        : currentValue + maximumRaise;
+                return NpcDecision.DeclareNumber(Math.Min(candidate, maximumAllowed));
             }
 
             return observation.CanDeclareCoyote
@@ -65,5 +78,10 @@ namespace CoyoteBattle.Domain
         /// 現在観測で数字宣言に要求する成立確率を返します。
         /// </summary>
         protected abstract double GetThreshold(NpcObservation observation);
+
+        /// <summary>
+        /// 現在観測と成立確率から、直前宣言値に対する最大上げ幅を返します。
+        /// </summary>
+        protected abstract int GetMaximumRaise(NpcObservation observation, double threshold);
     }
 }

@@ -5,7 +5,7 @@ using System.Linq;
 namespace CoyoteBattle.Domain
 {
     /// <summary>
-    /// 既定山札と現在の公開札から、NPCの伏せ札を含む実合計分布を推定します。
+    /// 既定山札から現在の公開札と使用済み札を除き、NPCの伏せ札を含む実合計分布を推定します。
     /// </summary>
     public sealed class NpcFieldTotalEstimator
     {
@@ -24,24 +24,36 @@ namespace CoyoteBattle.Domain
             var remainingCards = DefaultDeckFactory.Create().ToList();
             foreach (var deal in observation.VisibleCards)
             {
-                var index = remainingCards.FindIndex(card => HasSameFace(card, deal.Card));
-                if (index < 0)
-                {
-                    throw new ArgumentException(
-                        "公開カードが既定山札の種類別枚数を超えています。",
-                        nameof(observation)
-                    );
-                }
-
-                remainingCards.RemoveAt(index);
+                RemoveCard(
+                    remainingCards,
+                    deal.Card.Kind,
+                    deal.Card.Value,
+                    nameof(observation),
+                    "公開カードが既定山札の種類別枚数を超えています。"
+                );
             }
 
-            if (remainingCards.Count < 2)
+            foreach (var discardedCard in observation.DiscardedCards)
+            {
+                for (var count = 0; count < discardedCard.Count; count++)
+                {
+                    RemoveCard(
+                        remainingCards,
+                        discardedCard.Kind,
+                        discardedCard.Value,
+                        nameof(observation),
+                        "公開カードと使用済み札が既定山札の種類別枚数を超えています。"
+                    );
+                }
+            }
+
+            if (remainingCards.Count < 1)
             {
                 throw new ArgumentException("伏せ札候補が不足しています。", nameof(observation));
             }
 
             var visibleField = observation.VisibleCards.Select(item => item.Card).ToList();
+            var discardedCards = CreateDiscardedCards(observation.DiscardedCards);
             var weights = new Dictionary<int, long>();
             for (var hiddenIndex = 0; hiddenIndex < remainingCards.Count; hiddenIndex++)
             {
@@ -53,7 +65,17 @@ namespace CoyoteBattle.Domain
 
                 if (fieldCards.Any(card => card.Kind == CardKind.Mystery))
                 {
-                    foreach (var additionalCard in remainingAfterHidden)
+                    var additionalCandidates =
+                        remainingAfterHidden.Count > 0 ? remainingAfterHidden : discardedCards;
+                    if (additionalCandidates.Count == 0)
+                    {
+                        throw new ArgumentException(
+                            "疑問カードの追加札候補が不足しています。",
+                            nameof(observation)
+                        );
+                    }
+
+                    foreach (var additionalCard in additionalCandidates)
                     {
                         AddWeight(weights, CalculateTotal(fieldCards, additionalCard), 1);
                     }
@@ -63,7 +85,7 @@ namespace CoyoteBattle.Domain
                     AddWeight(
                         weights,
                         CalculateTotal(fieldCards, additionalCard: null),
-                        remainingAfterHidden.Count
+                        Math.Max(remainingAfterHidden.Count, 1)
                     );
                 }
             }
@@ -71,9 +93,51 @@ namespace CoyoteBattle.Domain
             return new FieldTotalProbabilityDistribution(weights);
         }
 
-        private static bool HasSameFace(Card left, Card right)
+        private static IReadOnlyList<Card> CreateDiscardedCards(
+            IReadOnlyList<NpcDiscardedCardCount> discardedCardCounts
+        )
         {
-            return left.Kind == right.Kind && left.Value == right.Value;
+            var defaultCards = DefaultDeckFactory.Create();
+            var cards = new List<Card>();
+            foreach (var discardedCardCount in discardedCardCounts)
+            {
+                cards.AddRange(
+                    defaultCards
+                        .Where(card =>
+                            card.Kind == discardedCardCount.Kind
+                            && card.Value == discardedCardCount.Value
+                        )
+                        .Take(discardedCardCount.Count)
+                );
+            }
+
+            return cards.AsReadOnly();
+        }
+
+        private static void RemoveCard(
+            IList<Card> cards,
+            CardKind kind,
+            int? value,
+            string parameterName,
+            string message
+        )
+        {
+            var index = -1;
+            for (var cardIndex = 0; cardIndex < cards.Count; cardIndex++)
+            {
+                if (cards[cardIndex].Kind == kind && cards[cardIndex].Value == value)
+                {
+                    index = cardIndex;
+                    break;
+                }
+            }
+
+            if (index < 0)
+            {
+                throw new ArgumentException(message, parameterName);
+            }
+
+            cards.RemoveAt(index);
         }
 
         private static int CalculateTotal(IReadOnlyList<Card> fieldCards, Card additionalCard)
