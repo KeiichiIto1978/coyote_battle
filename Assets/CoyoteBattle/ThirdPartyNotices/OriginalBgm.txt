@@ -1,0 +1,22 @@
+Coyote Battle Original Music
+============================
+
+Author / rights holder: KeiichiIto1978 (Coyote Battle project)
+Created: 2026
+Tracks:
+  Coyote Battle Title Theme (96 seconds, 75 BPM)
+  Coyote Battle Theme (96 seconds, 120 BPM)
+
+Generation method:
+  Generated specifically for this project by the deterministic waveform synthesis
+  script at scripts/generate_original_bgm.py. The script defines each track's
+  harmony, melody, piano/bell-like synthesis, synth pad, bass, and percussion.
+
+Third-party material:
+  None. No third-party composition, melody, arrangement, recording, sample library,
+  or generative music service was used.
+
+License / usage:
+  Original project asset. It may be included in and distributed with the Coyote
+  Battle application. No separate third-party attribution or license condition
+  applies to this audio asset.

@@ -3,7 +3,8 @@
   "rootNamespace": "CoyoteBattle.Presentation",
   "references": [
     "CoyoteBattle.Domain",
-    "CoyoteBattle.Application"
+    "CoyoteBattle.Application",
+    "UnityEngine.AudioModule"
   ],
   "autoReferenced": true
 }

@@ -22,6 +22,7 @@ namespace CoyoteBattle.Presentation
                 return;
             }
 
+            BgmPlayer.EnsureExists();
             new GameObject("CoyoteBattlePresentation").AddComponent<GamePresentationController>();
         }
     }

@@ -4,7 +4,8 @@
   "references": [
     "CoyoteBattle.Domain",
     "CoyoteBattle.Application",
-    "CoyoteBattle.Presentation"
+    "CoyoteBattle.Presentation",
+    "UnityEngine.AudioModule"
   ],
   "optionalUnityReferences": [
     "TestAssemblies"

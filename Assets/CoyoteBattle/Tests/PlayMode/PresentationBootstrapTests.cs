@@ -75,8 +75,54 @@ namespace CoyoteBattle.Tests.Presentation
             var renderingCamera = GameObject.Find("CoyoteBattleCamera");
             Assert.That(renderingCamera, Is.Not.Null);
             Assert.That(renderingCamera.GetComponent<Camera>(), Is.Not.Null);
+            Assert.That(renderingCamera.GetComponent<AudioListener>(), Is.Not.Null);
+            Assert.That(
+                Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None),
+                Has.Length.EqualTo(1)
+            );
             Object.Destroy(gameObject);
             Object.Destroy(renderingCamera);
+        }
+
+        /// <summary>
+        /// 既存Listenerが無効・非アクティブ・複数でも、表示用Cameraの1つだけを有効にすることを保証します。
+        /// </summary>
+        [UnityTest]
+        public IEnumerator EnsureExists_AudioListenerが無効か複数_表示用Cameraの1つだけを有効にする()
+        {
+            var cameraObject = new GameObject("ExistingMainCamera");
+            cameraObject.tag = "MainCamera";
+            cameraObject.AddComponent<Camera>();
+            var primaryListener = cameraObject.AddComponent<AudioListener>();
+            primaryListener.enabled = false;
+
+            var extraObject = new GameObject("ExtraAudioListener");
+            var extraListener = extraObject.AddComponent<AudioListener>();
+            var inactiveObject = new GameObject("InactiveAudioListener");
+            var inactiveListener = inactiveObject.AddComponent<AudioListener>();
+            inactiveObject.SetActive(false);
+
+            PresentationRenderingCamera.EnsureExists();
+            yield return null;
+
+            Assert.That(primaryListener.enabled, Is.True);
+            Assert.That(extraListener.enabled, Is.False);
+            Assert.That(inactiveListener.enabled, Is.False);
+            var enabledListenerCount = 0;
+            foreach (
+                var listener in Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None)
+            )
+            {
+                if (listener.enabled)
+                {
+                    enabledListenerCount++;
+                }
+            }
+            Assert.That(enabledListenerCount, Is.EqualTo(1));
+
+            Object.Destroy(cameraObject);
+            Object.Destroy(extraObject);
+            Object.Destroy(inactiveObject);
         }
 
         [UnityTest]

@@ -128,6 +128,7 @@ namespace CoyoteBattle.Presentation
         private void OnDestroy()
         {
             CancelPendingOperations();
+            DetachBgmControls();
             if (_document != null && _document.panelSettings != null)
             {
                 Destroy(_document.panelSettings);
@@ -272,6 +273,7 @@ namespace CoyoteBattle.Presentation
             _root.Add(_battleScreen);
             _root.Add(_resultScreen);
             _root.Add(_gameOverDialog);
+            BuildBgmControls();
         }
 
         private VisualElement BuildUserArea()
@@ -392,6 +394,7 @@ namespace CoyoteBattle.Presentation
         private void ShowTitle()
         {
             HideCardInformation();
+            _bgmPlayer.SetTrack(BgmTrack.Title);
             SetVisible(_titleScreen, true);
             SetVisible(_battleScreen, false);
             SetVisible(_resultScreen, false);
@@ -400,6 +403,7 @@ namespace CoyoteBattle.Presentation
 
         private void ShowBattle()
         {
+            _bgmPlayer.SetTrack(BgmTrack.Battle);
             SetVisible(_titleScreen, false);
             SetVisible(_battleScreen, true);
             SetVisible(_resultScreen, false);
