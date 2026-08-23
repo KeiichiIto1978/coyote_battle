@@ -9,12 +9,14 @@ namespace CoyoteBattle.Presentation
     [DisallowMultipleComponent]
     public sealed class BgmPlayer : MonoBehaviour
     {
-        private const string BgmResourcePath = "Audio/CoyoteBattleTheme";
+        private const string TitleBgmResourcePath = "Audio/CoyoteBattleTitleTheme";
+        private const string BattleBgmResourcePath = "Audio/CoyoteBattleTheme";
         private static BgmPlayer _instance;
         private IBgmSettingsStore _settingsStore = new PlayerPrefsBgmSettingsStore();
-        private AudioClip _configuredClip;
+        private AudioClip _titleClip;
+        private AudioClip _battleClip;
         private AudioSource _audioSource;
-        private bool _hasConfiguredClip;
+        private bool _hasConfiguredClips;
         private bool _hasStartedPlayback;
         private bool _isApplicationPaused;
         private bool _isInitialized;
@@ -23,6 +25,11 @@ namespace CoyoteBattle.Presentation
         /// 現在BGM設定がONかどうかを取得します。
         /// </summary>
         public bool IsEnabled { get; private set; } = true;
+
+        /// <summary>
+        /// 現在選択されているBGMの画面種別を取得します。
+        /// </summary>
+        internal BgmTrack CurrentTrack { get; private set; } = BgmTrack.Title;
 
         /// <summary>
         /// BGM再生に使用するAudioSourceを取得します。
@@ -120,11 +127,40 @@ namespace CoyoteBattle.Presentation
         }
 
         /// <summary>
+        /// 画面種別に対応するBGMへ切り替えます。同じ曲の再指定では再生位置を維持します。
+        /// </summary>
+        /// <param name="track">再生するBGMの画面種別です。</param>
+        internal void SetTrack(BgmTrack track)
+        {
+            if (CurrentTrack == track)
+            {
+                return;
+            }
+
+            CurrentTrack = track;
+            _audioSource.Stop();
+            _hasStartedPlayback = false;
+            _audioSource.clip = ClipFor(track);
+            if (_audioSource.clip == null)
+            {
+                Debug.LogWarning($"{track}用BGM音源を読み込めないため、無音でゲームを続行します。");
+                return;
+            }
+
+            ApplyPlaybackState();
+        }
+
+        /// <summary>
         /// PlayModeテスト用に保存先と音源を初期化前に差し替えます。
         /// </summary>
         /// <param name="settingsStore">テストで利用する設定ストアです。</param>
-        /// <param name="clip">再生するテスト音源です。欠落動作ではnullを指定します。</param>
-        internal void ConfigureForTests(IBgmSettingsStore settingsStore, AudioClip clip)
+        /// <param name="titleClip">Titleで再生するテスト音源です。</param>
+        /// <param name="battleClip">ゲーム中に再生するテスト音源です。</param>
+        internal void ConfigureForTests(
+            IBgmSettingsStore settingsStore,
+            AudioClip titleClip,
+            AudioClip battleClip
+        )
         {
             if (_isInitialized)
             {
@@ -133,8 +169,9 @@ namespace CoyoteBattle.Presentation
 
             _settingsStore =
                 settingsStore ?? throw new ArgumentNullException(nameof(settingsStore));
-            _configuredClip = clip;
-            _hasConfiguredClip = true;
+            _titleClip = titleClip;
+            _battleClip = battleClip;
+            _hasConfiguredClips = true;
         }
 
         private void Initialize()
@@ -153,9 +190,13 @@ namespace CoyoteBattle.Presentation
             }
             _audioSource.playOnAwake = false;
             _audioSource.loop = true;
-            _audioSource.clip = _hasConfiguredClip
-                ? _configuredClip
-                : Resources.Load<AudioClip>(BgmResourcePath);
+            if (!_hasConfiguredClips)
+            {
+                _titleClip = Resources.Load<AudioClip>(TitleBgmResourcePath);
+                _battleClip = Resources.Load<AudioClip>(BattleBgmResourcePath);
+            }
+
+            _audioSource.clip = ClipFor(CurrentTrack);
             if (_audioSource.clip == null)
             {
                 Debug.LogWarning("BGM音源を読み込めないため、無音でゲームを続行します。");
@@ -163,6 +204,11 @@ namespace CoyoteBattle.Presentation
             }
 
             ApplyPlaybackState();
+        }
+
+        private AudioClip ClipFor(BgmTrack track)
+        {
+            return track == BgmTrack.Title ? _titleClip : _battleClip;
         }
 
         private void ApplyPlaybackState()

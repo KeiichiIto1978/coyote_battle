@@ -8,23 +8,46 @@ namespace CoyoteBattle.Presentation
     internal static class PresentationRenderingCamera
     {
         /// <summary>
-        /// Cameraが存在しない場合だけ、背景クリア専用Cameraを生成します。
+        /// Cameraが存在しない場合は背景クリア専用Cameraを生成し、AudioListenerを1つだけ確保します。
         /// </summary>
         internal static void EnsureExists()
         {
-            if (Camera.allCamerasCount > 0)
+            var camera = Camera.main;
+            if (camera == null)
             {
-                return;
+                camera = Object.FindFirstObjectByType<Camera>();
             }
 
-            var gameObject = new GameObject("CoyoteBattleCamera");
-            gameObject.tag = "MainCamera";
-            var camera = gameObject.AddComponent<Camera>();
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = Color.black;
-            camera.cullingMask = 0;
-            camera.depth = -100;
-            camera.useOcclusionCulling = false;
+            if (camera == null)
+            {
+                var gameObject = new GameObject("CoyoteBattleCamera");
+                gameObject.tag = "MainCamera";
+                camera = gameObject.AddComponent<Camera>();
+                camera.clearFlags = CameraClearFlags.SolidColor;
+                camera.backgroundColor = Color.black;
+                camera.cullingMask = 0;
+                camera.depth = -100;
+                camera.useOcclusionCulling = false;
+            }
+
+            var primaryListener = camera.GetComponent<AudioListener>();
+            if (primaryListener == null)
+            {
+                primaryListener = camera.gameObject.AddComponent<AudioListener>();
+            }
+
+            primaryListener.enabled = true;
+            var listeners = Object.FindObjectsByType<AudioListener>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None
+            );
+            foreach (var listener in listeners)
+            {
+                if (listener != primaryListener)
+                {
+                    listener.enabled = false;
+                }
+            }
         }
     }
 }

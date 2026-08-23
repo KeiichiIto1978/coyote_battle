@@ -394,6 +394,7 @@ namespace CoyoteBattle.Presentation
         private void ShowTitle()
         {
             HideCardInformation();
+            _bgmPlayer.SetTrack(BgmTrack.Title);
             SetVisible(_titleScreen, true);
             SetVisible(_battleScreen, false);
             SetVisible(_resultScreen, false);
@@ -402,6 +403,7 @@ namespace CoyoteBattle.Presentation
 
         private void ShowBattle()
         {
+            _bgmPlayer.SetTrack(BgmTrack.Battle);
             SetVisible(_titleScreen, false);
             SetVisible(_battleScreen, true);
             SetVisible(_resultScreen, false);

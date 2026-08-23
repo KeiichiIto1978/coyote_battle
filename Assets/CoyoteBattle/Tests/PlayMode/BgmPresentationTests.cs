@@ -44,8 +44,9 @@ namespace CoyoteBattle.Tests.Presentation
         [UnityTest]
         public IEnumerator EnsureExists_複数回呼び出す_AudioSourceを1つだけループ再生する()
         {
-            var clip = AudioClip.Create("TestBgm", 44100, 1, 44100, false);
-            var player = CreateConfiguredPlayer(clip);
+            var titleClip = AudioClip.Create("TitleBgm", 44100, 1, 44100, false);
+            var battleClip = AudioClip.Create("BattleBgm", 44100, 1, 44100, false);
+            var player = CreateConfiguredPlayer(titleClip, battleClip);
             yield return null;
 
             var second = BgmPlayer.EnsureExists();
@@ -57,18 +58,47 @@ namespace CoyoteBattle.Tests.Presentation
             );
             Assert.That(player.GetComponents<AudioSource>(), Has.Length.EqualTo(1));
             Assert.That(player.AudioSource.loop, Is.True);
-            Assert.That(player.AudioSource.clip, Is.SameAs(clip));
+            Assert.That(player.AudioSource.clip, Is.SameAs(titleClip));
             Assert.That(player.AudioSource.isPlaying, Is.True);
         }
 
         /// <summary>
-        /// TitleからBattleへ切り替えてもBGMプレイヤーと再生位置を作り直さないことを保証します。
+        /// Titleとゲーム中で別のBGMへ切り替え、同じ画面種別の再指定では先頭へ戻らないことを保証します。
         /// </summary>
         [UnityTest]
-        public IEnumerator StartNewGame_TitleからBattleへ遷移_BGMを先頭へ戻さず継続する()
+        public IEnumerator SetTrack_TitleからBattleとTitleへ切替_指定曲を一度だけ先頭から再生する()
         {
-            var clip = AudioClip.Create("TestBgm", 176400, 1, 44100, false);
-            var player = CreateConfiguredPlayer(clip);
+            var titleClip = AudioClip.Create("TitleBgm", 176400, 1, 44100, false);
+            var battleClip = AudioClip.Create("BattleBgm", 176400, 1, 44100, false);
+            var player = CreateConfiguredPlayer(titleClip, battleClip);
+            yield return null;
+            player.AudioSource.timeSamples = 22050;
+
+            player.SetTrack(BgmTrack.Battle);
+
+            Assert.That(player.AudioSource.clip, Is.SameAs(battleClip));
+            Assert.That(player.AudioSource.timeSamples, Is.LessThan(22050));
+            player.AudioSource.timeSamples = 33075;
+
+            player.SetTrack(BgmTrack.Battle);
+
+            Assert.That(player.AudioSource.timeSamples, Is.GreaterThanOrEqualTo(33075));
+
+            player.SetTrack(BgmTrack.Title);
+
+            Assert.That(player.AudioSource.clip, Is.SameAs(titleClip));
+            Assert.That(player.AudioSource.timeSamples, Is.LessThan(22050));
+        }
+
+        /// <summary>
+        /// Title・Battle・Titleの画面遷移でプレイヤーを作り直さず、対応する曲へ切り替えることを保証します。
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ScreenTransition_TitleとBattleを往復_同じプレイヤーで対応曲を再生する()
+        {
+            var titleClip = AudioClip.Create("TitleBgm", 176400, 1, 44100, false);
+            var battleClip = AudioClip.Create("BattleBgm", 176400, 1, 44100, false);
+            var player = CreateConfiguredPlayer(titleClip, battleClip);
             var presentation = new GameObject("Presentation");
             presentation.AddComponent<GamePresentationController>();
             yield return null;
@@ -83,11 +113,26 @@ namespace CoyoteBattle.Tests.Presentation
                 Is.EqualTo(DisplayStyle.Flex)
             );
             Assert.That(BgmPlayer.EnsureExists(), Is.SameAs(player));
-            Assert.That(player.AudioSource.timeSamples, Is.GreaterThanOrEqualTo(22050));
+            Assert.That(player.CurrentTrack, Is.EqualTo(BgmTrack.Battle));
+            Assert.That(player.AudioSource.clip, Is.SameAs(battleClip));
             Assert.That(
                 Object.FindObjectsByType<BgmPlayer>(FindObjectsSortMode.None),
                 Has.Length.EqualTo(1)
             );
+
+            player.AudioSource.timeSamples = 22050;
+            root.Q<VisualElement>("game-over-dialog").style.display = DisplayStyle.Flex;
+            yield return null;
+            Click(root.Q<Button>("return-title-button"));
+            yield return null;
+
+            Assert.That(
+                root.Q<VisualElement>("title-screen").resolvedStyle.display,
+                Is.EqualTo(DisplayStyle.Flex)
+            );
+            Assert.That(player.CurrentTrack, Is.EqualTo(BgmTrack.Title));
+            Assert.That(player.AudioSource.clip, Is.SameAs(titleClip));
+            Assert.That(player.AudioSource.timeSamples, Is.LessThan(22050));
         }
 
         /// <summary>
@@ -100,7 +145,7 @@ namespace CoyoteBattle.Tests.Presentation
                 LogType.Warning,
                 "BGM音源を読み込めないため、無音でゲームを続行します。"
             );
-            CreateConfiguredPlayer(null);
+            CreateConfiguredPlayer(null, null);
             var presentation = new GameObject("Presentation");
             presentation.AddComponent<GamePresentationController>();
             yield return null;
@@ -119,8 +164,9 @@ namespace CoyoteBattle.Tests.Presentation
         [UnityTest]
         public IEnumerator BgmToggle_OFFからONへ変更_即時反映して設定を保存する()
         {
-            var clip = AudioClip.Create("TestBgm", 44100, 1, 44100, false);
-            var player = CreateConfiguredPlayer(clip);
+            var titleClip = AudioClip.Create("TitleBgm", 176400, 1, 44100, false);
+            var battleClip = AudioClip.Create("BattleBgm", 176400, 1, 44100, false);
+            var player = CreateConfiguredPlayer(titleClip, battleClip);
             var presentation = new GameObject("Presentation");
             presentation.AddComponent<GamePresentationController>();
             yield return null;
@@ -130,16 +176,40 @@ namespace CoyoteBattle.Tests.Presentation
                 .rootVisualElement.Q<Toggle>("bgm-toggle");
             Assert.That(toggle, Is.Not.Null);
             Assert.That(toggle.value, Is.True);
+            Assert.That(toggle.enabledInHierarchy, Is.True);
+            Assert.That(toggle.resolvedStyle.display, Is.Not.EqualTo(DisplayStyle.None));
+            Assert.That(toggle.worldBound.width, Is.GreaterThan(0f));
+            player.AudioSource.timeSamples = 11025;
 
-            toggle.value = false;
+            Click(toggle);
             yield return null;
+            Assert.That(toggle.value, Is.False);
             Assert.That(player.AudioSource.isPlaying, Is.False);
             Assert.That(new PlayerPrefsBgmSettingsStore(TestKey).LoadEnabled(), Is.False);
+            var firstPausedAt = player.AudioSource.timeSamples;
+            Assert.That(firstPausedAt, Is.GreaterThanOrEqualTo(11025));
 
-            toggle.value = true;
+            Click(toggle);
             yield return null;
+            Assert.That(toggle.value, Is.True);
             Assert.That(player.AudioSource.isPlaying, Is.True);
             Assert.That(new PlayerPrefsBgmSettingsStore(TestKey).LoadEnabled(), Is.True);
+            Assert.That(player.AudioSource.timeSamples, Is.GreaterThanOrEqualTo(firstPausedAt));
+
+            player.AudioSource.timeSamples = 33075;
+
+            Click(toggle);
+            yield return null;
+            Assert.That(toggle.value, Is.False);
+            Assert.That(player.AudioSource.isPlaying, Is.False);
+            var secondPausedAt = player.AudioSource.timeSamples;
+            Assert.That(secondPausedAt, Is.GreaterThanOrEqualTo(33075));
+
+            Click(toggle);
+            yield return null;
+            Assert.That(toggle.value, Is.True);
+            Assert.That(player.AudioSource.isPlaying, Is.True);
+            Assert.That(player.AudioSource.timeSamples, Is.GreaterThanOrEqualTo(secondPausedAt));
         }
 
         /// <summary>
@@ -148,8 +218,9 @@ namespace CoyoteBattle.Tests.Presentation
         [UnityTest]
         public IEnumerator OnApplicationPause_中断後に復帰_同じ位置から再開する()
         {
-            var clip = AudioClip.Create("TestBgm", 88200, 1, 44100, false);
-            var player = CreateConfiguredPlayer(clip);
+            var titleClip = AudioClip.Create("TitleBgm", 88200, 1, 44100, false);
+            var battleClip = AudioClip.Create("BattleBgm", 88200, 1, 44100, false);
+            var player = CreateConfiguredPlayer(titleClip, battleClip);
             yield return null;
             player.AudioSource.timeSamples = 22050;
 
@@ -162,19 +233,23 @@ namespace CoyoteBattle.Tests.Presentation
             Assert.That(player.AudioSource.isPlaying, Is.True);
         }
 
-        private static BgmPlayer CreateConfiguredPlayer(AudioClip clip)
+        private static BgmPlayer CreateConfiguredPlayer(AudioClip titleClip, AudioClip battleClip)
         {
             var gameObject = new GameObject("BgmPlayerTest");
             gameObject.SetActive(false);
             var player = gameObject.AddComponent<BgmPlayer>();
-            player.ConfigureForTests(new PlayerPrefsBgmSettingsStore(TestKey), clip);
+            player.ConfigureForTests(
+                new PlayerPrefsBgmSettingsStore(TestKey),
+                titleClip,
+                battleClip
+            );
             gameObject.SetActive(true);
             return player;
         }
 
-        private static void Click(Button button)
+        private static void Click(VisualElement element)
         {
-            var position = button.worldBound.center;
+            var position = element.worldBound.center;
             var downEvent = new Event
             {
                 type = EventType.MouseDown,
@@ -183,7 +258,7 @@ namespace CoyoteBattle.Tests.Presentation
             };
             using (var pointerDown = PointerDownEvent.GetPooled(downEvent))
             {
-                button.SendEvent(pointerDown);
+                element.SendEvent(pointerDown);
             }
 
             var upEvent = new Event
@@ -194,9 +269,9 @@ namespace CoyoteBattle.Tests.Presentation
             };
             using (var pointerUp = PointerUpEvent.GetPooled(upEvent))
             {
-                button.SendEvent(pointerUp);
+                element.SendEvent(pointerUp);
             }
-            button.ReleasePointer(PointerId.mousePointerId);
+            element.ReleasePointer(PointerId.mousePointerId);
         }
     }
 }

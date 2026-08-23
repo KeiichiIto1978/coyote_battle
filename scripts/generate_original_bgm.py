@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import struct
 import wave
+from collections.abc import Callable
 from pathlib import Path
 
 
@@ -15,14 +16,19 @@ BEAT_SECONDS = 60.0 / BEATS_PER_MINUTE
 BARS = 48
 BEATS_PER_BAR = 4
 DURATION_SECONDS = BARS * BEATS_PER_BAR * BEAT_SECONDS
-OUTPUT_PATH = (
+OUTPUT_DIRECTORY = (
     Path(__file__).resolve().parents[1]
     / "Assets"
     / "CoyoteBattle"
     / "Resources"
     / "Audio"
-    / "CoyoteBattleTheme.wav"
 )
+BATTLE_OUTPUT_PATH = OUTPUT_DIRECTORY / "CoyoteBattleTheme.wav"
+TITLE_OUTPUT_PATH = OUTPUT_DIRECTORY / "CoyoteBattleTitleTheme.wav"
+TITLE_BEATS_PER_MINUTE = 75
+TITLE_BEAT_SECONDS = 60.0 / TITLE_BEATS_PER_MINUTE
+TITLE_BARS = 30
+TITLE_DURATION_SECONDS = TITLE_BARS * BEATS_PER_BAR * TITLE_BEAT_SECONDS
 
 NOTE_OFFSETS = {
     "C": 0,
@@ -71,6 +77,28 @@ MELODY = (
     "G5",
 )
 
+# プレイ曲と対照的な、明るく静かな5小節のTitle用循環を6周する。
+TITLE_CHORDS = (
+    ("C3", "E3", "G3", "B3"),
+    ("A2", "C3", "E3", "G3"),
+    ("F2", "A2", "C3", "E3"),
+    ("D3", "F3", "A3", "C4"),
+    ("G2", "C3", "D3", "G3"),
+)
+
+TITLE_MELODY = (
+    "C5",
+    "E5",
+    "G5",
+    "A5",
+    "G5",
+    "E5",
+    "D5",
+    "C5",
+    "A4",
+    "D5",
+)
+
 
 def frequency(note: str) -> float:
     """音名を平均律の周波数へ変換する。"""
@@ -110,6 +138,27 @@ def synth_pad(freq: float, local_time: float) -> tuple[float, float]:
     left = math.sin(phase) + 0.32 * math.sin(phase * 2.003)
     right = math.sin(phase * 1.002) + 0.32 * math.sin(phase * 1.997)
     return amp * left / 1.32, amp * right / 1.32
+
+
+def ambient_pad(freq: float, local_time: float, duration: float) -> tuple[float, float]:
+    """長い立ち上がりと余韻を持つTitle用の穏やかなパッドを合成する。"""
+    amp = envelope(local_time, duration, 0.65, 0.25)
+    phase = math.tau * freq * local_time
+    left = math.sin(phase) + 0.18 * math.sin(phase * 2.001)
+    right = math.sin(phase * 1.001) + 0.18 * math.sin(phase * 1.999)
+    return amp * left / 1.18, amp * right / 1.18
+
+
+def bell_tone(freq: float, local_time: float, duration: float) -> float:
+    """Title旋律に使う透明感のあるベル風音色を合成する。"""
+    amp = envelope(local_time, duration, 0.02, 0.18)
+    amp *= math.exp(-2.4 * local_time / duration)
+    phase = math.tau * freq * local_time
+    return amp * (
+        math.sin(phase)
+        + 0.35 * math.sin(phase * 2.01)
+        + 0.14 * math.sin(phase * 3.98)
+    ) / 1.49
 
 
 def deterministic_noise(sample_index: int) -> float:
@@ -180,20 +229,65 @@ def render_sample(sample_index: int) -> tuple[int, int]:
     return left_pcm, right_pcm
 
 
-def generate() -> None:
-    """96秒のステレオWAVを生成し、ループ境界の無音・段差を検証する。"""
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    total_samples = int(DURATION_SECONDS * SAMPLE_RATE)
+def render_title_sample(sample_index: int) -> tuple[int, int]:
+    """Title用の静かで余白のあるステレオPCM値を生成する。"""
+    time = sample_index / SAMPLE_RATE
+    beat_position = time / TITLE_BEAT_SECONDS
+    bar_index = min(TITLE_BARS - 1, int(beat_position // BEATS_PER_BAR))
+    beat_in_bar = beat_position - bar_index * BEATS_PER_BAR
+    bar_time = beat_in_bar * TITLE_BEAT_SECONDS
+    bar_duration = BEATS_PER_BAR * TITLE_BEAT_SECONDS
+    chord = TITLE_CHORDS[bar_index % len(TITLE_CHORDS)]
+
+    left = 0.0
+    right = 0.0
+    for chord_note in chord:
+        pad_left, pad_right = ambient_pad(frequency(chord_note), bar_time, bar_duration)
+        left += 0.075 * pad_left
+        right += 0.075 * pad_right
+
+    half_bar_index = min(1, int(beat_in_bar // 2.0))
+    half_bar_time = (beat_in_bar - half_bar_index * 2.0) * TITLE_BEAT_SECONDS
+    melody_index = (bar_index * 2 + half_bar_index) % len(TITLE_MELODY)
+    melody = bell_tone(
+        frequency(TITLE_MELODY[melody_index]),
+        half_bar_time,
+        TITLE_BEAT_SECONDS * 2.0,
+    )
+    pan = -0.18 if half_bar_index == 0 else 0.18
+    left += 0.16 * melody * (1.0 - pan)
+    right += 0.16 * melody * (1.0 + pan)
+
+    low_note = chord[0]
+    low_phase = math.tau * frequency(low_note) / 2.0 * bar_time
+    low_envelope = envelope(bar_time, bar_duration, 0.8, 0.25)
+    left += 0.055 * low_envelope * math.sin(low_phase)
+    right += 0.055 * low_envelope * math.sin(low_phase * 1.001)
+
+    master_gain = 0.58
+    left_pcm = int(max(-1.0, min(1.0, left * master_gain)) * 32_767)
+    right_pcm = int(max(-1.0, min(1.0, right * master_gain)) * 32_767)
+    return left_pcm, right_pcm
+
+
+def write_track(
+    output_path: Path,
+    duration_seconds: float,
+    renderer: Callable[[int], tuple[int, int]],
+) -> int:
+    """指定した合成処理からWAVを書き出し、ループ境界のPCM段差を返す。"""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    total_samples = int(duration_seconds * SAMPLE_RATE)
     first_sample: tuple[int, int] | None = None
     last_sample: tuple[int, int] | None = None
 
-    with wave.open(str(OUTPUT_PATH), "wb") as output:
+    with wave.open(str(output_path), "wb") as output:
         output.setnchannels(CHANNELS)
         output.setsampwidth(2)
         output.setframerate(SAMPLE_RATE)
         buffer = bytearray()
         for sample_index in range(total_samples):
-            sample = render_sample(sample_index)
+            sample = renderer(sample_index)
             if first_sample is None:
                 first_sample = sample
             last_sample = sample
@@ -209,10 +303,24 @@ def generate() -> None:
     if boundary_jump > 256:
         raise RuntimeError(f"ループ境界のPCM段差が大きすぎます: {boundary_jump}")
 
+    return boundary_jump
+
+
+def generate() -> None:
+    """対照的なTitle曲とプレイ曲を生成し、各ループ境界を検証する。"""
+    battle_boundary_jump = write_track(BATTLE_OUTPUT_PATH, DURATION_SECONDS, render_sample)
+    title_boundary_jump = write_track(
+        TITLE_OUTPUT_PATH,
+        TITLE_DURATION_SECONDS,
+        render_title_sample,
+    )
+
     print(
-        f"generated: {OUTPUT_PATH}\n"
-        f"duration: {DURATION_SECONDS:.1f}s, sample_rate: {SAMPLE_RATE}Hz, "
-        f"boundary_jump: {boundary_jump}"
+        f"generated: {BATTLE_OUTPUT_PATH}\n"
+        f"duration: {DURATION_SECONDS:.1f}s, boundary_jump: {battle_boundary_jump}\n"
+        f"generated: {TITLE_OUTPUT_PATH}\n"
+        f"duration: {TITLE_DURATION_SECONDS:.1f}s, boundary_jump: {title_boundary_jump}\n"
+        f"sample_rate: {SAMPLE_RATE}Hz"
     )
 
 

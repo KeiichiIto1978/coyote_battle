@@ -11,18 +11,21 @@ namespace CoyoteBattle.Tests.Presentation
     /// </summary>
     public sealed class OriginalBgmAssetTests
     {
-        private const string AssetPath =
+        private const string BattleAssetPath =
             "Assets/CoyoteBattle/Resources/Audio/CoyoteBattleTheme.wav";
+        private const string TitleAssetPath =
+            "Assets/CoyoteBattle/Resources/Audio/CoyoteBattleTitleTheme.wav";
         private const int WavHeaderBytes = 44;
 
         /// <summary>
-        /// 合意した1曲が90〜120秒で、長時間再生向けのStreaming設定になっていることを保証します。
+        /// Title曲とプレイ曲が90〜120秒で、長時間再生向けのStreaming設定になっていることを保証します。
         /// </summary>
-        [Test]
-        public void CoyoteBattleTheme_同梱音源_90秒以上120秒以下でStreaming読込する()
+        [TestCase(TitleAssetPath)]
+        [TestCase(BattleAssetPath)]
+        public void OriginalBgm_同梱音源_90秒以上120秒以下でStreaming読込する(string assetPath)
         {
-            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetPath);
-            var importer = AssetImporter.GetAtPath(AssetPath) as AudioImporter;
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(assetPath);
+            var importer = AssetImporter.GetAtPath(assetPath) as AudioImporter;
 
             Assert.That(clip, Is.Not.Null);
             Assert.That(clip.length, Is.InRange(90f, 120f));
@@ -43,10 +46,11 @@ namespace CoyoteBattle.Tests.Presentation
         /// <summary>
         /// 同梱WAVの先頭と末尾に段差がなく、境界直前直後が長い無音にならないことを保証します。
         /// </summary>
-        [Test]
-        public void CoyoteBattleTheme_ループ境界_PCM段差と目立つ無音がない()
+        [TestCase(TitleAssetPath)]
+        [TestCase(BattleAssetPath)]
+        public void OriginalBgm_ループ境界_PCM段差と目立つ無音がない(string assetPath)
         {
-            var wav = File.ReadAllBytes(AssetPath);
+            var wav = File.ReadAllBytes(assetPath);
             var channels = BitConverter.ToInt16(wav, 22);
             var sampleRate = BitConverter.ToInt32(wav, 24);
             var bytesPerFrame = channels * sizeof(short);
