@@ -220,22 +220,37 @@ namespace CoyoteBattle.Presentation
                 panel.style.borderTopWidth = panel.style.borderBottomWidth = 5;
             }
 
+            panel.style.flexDirection = FlexDirection.Row;
+            panel.style.justifyContent = Justify.Center;
+
             var avatar = new VisualElement { name = $"{participant.Id}-portrait" };
-            avatar.style.width = Length.Percent(100);
+            avatar.style.width = 168;
+            avatar.style.height = 168;
+            avatar.style.minWidth = 132;
+            avatar.style.minHeight = 132;
+            avatar.style.maxWidth = Length.Percent(46);
             avatar.style.flexGrow = 1;
-            avatar.style.minHeight = 80;
+            avatar.style.flexShrink = 1;
+            avatar.style.marginRight = 12;
             SetBackground(avatar, AvatarResource(participant.Id));
             avatar.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
             avatar.style.backgroundRepeat = new BackgroundRepeat(Repeat.NoRepeat, Repeat.NoRepeat);
             panel.Add(avatar);
-            panel.Add(
+
+            var details = new VisualElement { name = $"{participant.Id}-details" };
+            details.style.flexDirection = FlexDirection.Column;
+            details.style.alignItems = Align.Center;
+            details.style.justifyContent = Justify.Center;
+            details.style.flexGrow = 1;
+            details.style.flexShrink = 1;
+            details.Add(
                 CreateLabel(
                     PresentationText.ParticipantName(participant.Id),
                     20,
                     $"{participant.Id}-name"
                 )
             );
-            panel.Add(
+            details.Add(
                 CreateLabel(
                     $"ライフ {participant.Life}"
                         + (participant.IsEliminated ? " / 脱落" : string.Empty),
@@ -258,7 +273,8 @@ namespace CoyoteBattle.Presentation
                     card.Card.Kind == CardKind.Number ? Color.black : Color.white;
             }
 
-            panel.Add(cardLabel);
+            details.Add(cardLabel);
+            panel.Add(details);
             return panel;
         }
 

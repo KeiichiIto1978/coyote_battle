@@ -171,13 +171,14 @@ namespace CoyoteBattle.Tests.Presentation
             var controls = root.Q<VisualElement>("controls");
             var declaration = root.Q<Label>("declaration-label");
             var banner = root.Q<Label>("action-banner");
+            var minimumPortraitHeight = resolution.x >= 2400 ? 132f : 72f;
             for (var index = 1; index <= 4; index++)
             {
                 var portrait = root.Q<VisualElement>($"npc-{index}-portrait");
                 Assert.That(
                     portrait.resolvedStyle.height,
-                    Is.GreaterThanOrEqualTo(72f),
-                    $"{resolution.x}x{resolution.y}: NPC {index} のキャラアイコンを判別できる大きさに保つ"
+                    Is.GreaterThanOrEqualTo(minimumPortraitHeight),
+                    $"{resolution.x}x{resolution.y}: NPC {index} のキャラアイコンを横長画面では大きく保つ"
                 );
             }
             Assert.That(npcRow.worldBound.Overlaps(declarationPanel.worldBound), Is.False);

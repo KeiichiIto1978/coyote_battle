@@ -281,6 +281,7 @@ namespace CoyoteBattle.Tests.Presentation
                 var participantId = $"npc-{index + 1}";
                 panels[index] = root.Q<VisualElement>(participantId);
                 var portrait = panels[index].Q<VisualElement>($"{participantId}-portrait");
+                var card = panels[index].Q<Label>($"{participantId}-card");
                 Assert.That(
                     portrait.resolvedStyle.width,
                     Is.GreaterThan(0f),
@@ -288,9 +289,22 @@ namespace CoyoteBattle.Tests.Presentation
                 );
                 Assert.That(
                     portrait.resolvedStyle.height,
-                    Is.GreaterThan(0f),
+                    Is.GreaterThanOrEqualTo(resolution.x >= 2400 ? 132f : 72f),
                     $"{resolution.x}x{resolution.y}: {participantId} の画像高さ"
                 );
+                if (resolution.x >= 2400)
+                {
+                    Assert.That(
+                        portrait.worldBound.Overlaps(card.worldBound),
+                        Is.False,
+                        $"{resolution.x}x{resolution.y}: 横長画面では画像とカードを横方向に並べる"
+                    );
+                    Assert.That(
+                        Mathf.Abs(portrait.worldBound.center.y - card.worldBound.center.y),
+                        Is.LessThan(80f),
+                        $"{resolution.x}x{resolution.y}: 横長画面では画像とカードの縦位置を近づける"
+                    );
+                }
                 Assert.That(
                     npcRow.worldBound.Contains(panels[index].worldBound.min),
                     Is.True,
