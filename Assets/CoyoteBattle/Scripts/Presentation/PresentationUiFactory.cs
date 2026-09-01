@@ -154,9 +154,10 @@ namespace CoyoteBattle.Presentation
             textInput.style.minWidth = 0;
             textInput.style.height = 48;
             textInput.style.paddingLeft = textInput.style.paddingRight = 12;
+            textInput.style.paddingTop = textInput.style.paddingBottom = 0;
             textInput.style.unityTextAlign = TextAnchor.MiddleLeft;
             textInput.style.whiteSpace = WhiteSpace.NoWrap;
-            textInput.style.overflow = Overflow.Hidden;
+            textInput.style.overflow = Overflow.Visible;
             textInput.style.borderTopLeftRadius = textInput.style.borderTopRightRadius = 6;
             textInput.style.borderBottomLeftRadius = textInput.style.borderBottomRightRadius = 6;
             textInput.style.borderLeftWidth = textInput.style.borderRightWidth = 2;
