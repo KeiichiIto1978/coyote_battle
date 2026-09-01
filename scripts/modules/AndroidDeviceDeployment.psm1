@@ -179,7 +179,7 @@ function Wait-AndroidProcess
     $Process.WaitForExit()
 }
 
-function New-AndroidDeploymentEvidence
+function Get-AndroidDeploymentEvidence
 {
     [CmdletBinding()]
     param(
@@ -272,5 +272,5 @@ Export-ModuleMember -Function ConvertFrom-AndroidBadgingOutput
 Export-ModuleMember -Function Assert-AndroidApkCompatibility
 Export-ModuleMember -Function Assert-AndroidLaunchOutput
 Export-ModuleMember -Function Wait-AndroidProcess
-Export-ModuleMember -Function New-AndroidDeploymentEvidence
+Export-ModuleMember -Function Get-AndroidDeploymentEvidence
 Export-ModuleMember -Function Assert-AndroidBuildEvidence

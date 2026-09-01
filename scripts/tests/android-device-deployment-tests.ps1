@@ -19,7 +19,7 @@ function Assert-Equal
     }
 }
 
-function Assert-Throws
+function Assert-Failure
 {
     param(
         [scriptblock]$Action,
@@ -52,7 +52,7 @@ Assert-Equal (@($oneDevice).Count) 1 'Failed to parse one connected device.'
 Assert-Equal $oneDevice[0].State 'device' 'Failed to parse the ready state.'
 Assert-Equal (Select-SingleReadyAndroidDevice -Devices $oneDevice) 'secret-serial' 'Failed to select one device.'
 
-Assert-Throws {
+Assert-Failure {
     Select-SingleReadyAndroidDevice -Devices @()
 } 'No Android device is connected' 'Zero devices were accepted.'
 
@@ -61,7 +61,7 @@ $twoDevices = ConvertFrom-AdbDevicesOutput -Lines @(
     'first device product:test',
     'second device product:test'
 )
-Assert-Throws {
+Assert-Failure {
     Select-SingleReadyAndroidDevice -Devices $twoDevices
 } 'Multiple Android devices' 'Multiple devices were accepted.'
 
@@ -71,16 +71,16 @@ foreach ($state in @('unauthorized', 'offline'))
         'List of devices attached',
         "secret-serial $state product:test"
     )
-    Assert-Throws {
+    Assert-Failure {
         Select-SingleReadyAndroidDevice -Devices $unavailable
     } $state "$state device was accepted."
 }
 
 Assert-AndroidDeviceCompatibility -ApiLevel 25 -Abi 'arm64-v8a'
-Assert-Throws {
+Assert-Failure {
     Assert-AndroidDeviceCompatibility -ApiLevel 24 -Abi 'arm64-v8a'
 } 'API Level 25' 'API 24 was accepted.'
-Assert-Throws {
+Assert-Failure {
     Assert-AndroidDeviceCompatibility -ApiLevel 35 -Abi 'armeabi-v7a'
 } 'ARM64' 'ARMv7 was accepted.'
 
@@ -101,7 +101,7 @@ $wrongPackage = ConvertFrom-AndroidBadgingOutput -Lines @(
     "targetSdkVersion:'35'",
     "native-code: 'arm64-v8a'"
 )
-Assert-Throws {
+Assert-Failure {
     Assert-AndroidApkCompatibility -Metadata $wrongPackage
 } 'package does not match' 'An unrelated APK was accepted.'
 
@@ -111,16 +111,16 @@ $wrongArchitecture = ConvertFrom-AndroidBadgingOutput -Lines @(
     "targetSdkVersion:'35'",
     "native-code: 'armeabi-v7a'"
 )
-Assert-Throws {
+Assert-Failure {
     Assert-AndroidApkCompatibility -Metadata $wrongArchitecture
 } 'ARM64 only' 'An APK without ARM64-only native code was accepted.'
 
-Assert-Throws {
+Assert-Failure {
     ConvertFrom-AndroidBadgingOutput -Lines @('badging output is incomplete')
 } 'Could not parse' 'Invalid APK metadata was accepted.'
 
 Assert-AndroidLaunchOutput -Lines @('Events injected: 1')
-Assert-Throws {
+Assert-Failure {
     Assert-AndroidLaunchOutput -Lines @('No activities found to run')
 } 'successful launch event' 'A failed launch was accepted.'
 
@@ -133,7 +133,7 @@ $slowProcess.StartInfo.UseShellExecute = $false
 $null = $slowProcess.Start()
 try
 {
-    Assert-Throws {
+    Assert-Failure {
         Wait-AndroidProcess `
             -Process $slowProcess `
             -TimeoutMilliseconds 50 `
@@ -156,7 +156,7 @@ $temporaryApk = Join-Path ([System.IO.Path]::GetTempPath()) "coyote-apk-$([Guid]
 try
 {
     [System.IO.File]::WriteAllBytes($temporaryApk, [byte[]](1, 2, 3, 4))
-    $evidence = New-AndroidDeploymentEvidence `
+    $evidence = Get-AndroidDeploymentEvidence `
         -ApkPath $temporaryApk `
         -CommitSha ('a' * 40) `
         -VersionName '1.0' `
@@ -188,14 +188,14 @@ try
         -ApkPath $temporaryApk `
         -CurrentCommitSha ('a' * 40) `
         -HasTrackedChanges $false
-    Assert-Throws {
+    Assert-Failure {
         Assert-AndroidBuildEvidence `
             -Evidence $buildEvidence `
             -ApkPath $temporaryApk `
             -CurrentCommitSha ('b' * 40) `
             -HasTrackedChanges $false
     } 'commit does not match' 'Evidence for a different commit was accepted.'
-    Assert-Throws {
+    Assert-Failure {
         Assert-AndroidBuildEvidence `
             -Evidence $buildEvidence `
             -ApkPath $temporaryApk `
