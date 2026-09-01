@@ -14,6 +14,13 @@
 
 - [品質ゲート](specifications/QualityGates.md): formatter、lint、pre-push、CI、Unity EditModeテストの運用
 - [リリースCI](specifications/ReleaseCi.md): releaseブランチ、Unity Build Automation、Android APKの運用
+- [Android実機確認・限定配布](specifications/AndroidDistribution.md): 対応端末、ADB導入、スモーク確認、検証用APKの直接配布
+- [参加者・ライフ・脱落](specifications/ParticipantRules.md): 固定5名、識別子、ライフ、脱落、失敗契約
+- [宣言・ラウンド敗者判定](specifications/DeclarationRules.md): 数字宣言、コヨーテ宣言、履歴、敗者判定
+- [ゲーム進行](specifications/GameFlow.md): ラウンド、手番、判定、脱落、勝敗、再戦、公開状態
+- [NPC判断](specifications/NpcDecisionRules.md): NPC専用観測、合計確率推定、4タイプ、1手実行
+- [画面表示と操作](specifications/PresentationFlow.md): 画面遷移、カード表示、数字入力、NPC自動進行、結果、Safe Area、画像素材
+- [オーディオ](specifications/Audio.md): オリジナルBGM、ループ再生、ON/OFF保存、中断復帰、権利情報
 
 ## 基本方針
 

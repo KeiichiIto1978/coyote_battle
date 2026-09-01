@@ -150,10 +150,39 @@ try {
 }
 ```
 
-スクリプトはEditorとAndroid SDK・NDK・JDKを検出し、以前のAPKを削除してから、Development APKの終了コード、更新日時、ファイルサイズを検証します。ASCIIだけで構成された空白入りパスにも対応します。
+スクリプトはEditorとAndroid SDK・NDK・JDKを検出し、追跡対象に未コミット変更がないことを確認します。以前のAPKを削除してから、Development APKの終了コード、更新日時、ファイルサイズを検証し、commit SHA、サイズ、SHA-256を`.build.json`へ記録します。ASCIIだけで構成された空白入りパスにも対応します。
 
 成果物は`Builds/Android/CoyoteBattle-development.apk`、ログは`Logs/AndroidDevelopmentBuild.log`へ出力され、Gitの管理対象には含まれません。
 
+## Android実機へのインストール
+
+Android 7.1（API 25）以上のARM64端末でUSBデバッグを有効にし、対象端末だけを接続します。非ASCIIパスの問題を避けるため、ビルドと同じ一時ドライブ上で実行します。
+
+```powershell
+$createdMapping = $false
+if (subst | Select-String '^U:') {
+  throw 'U: は既に使用されています。未使用のドライブ文字へ置き換えてください。'
+}
+try {
+  subst U: "$PWD"
+  if ($LASTEXITCODE -ne 0) {
+    throw '一時ドライブの割り当てに失敗しました。'
+  }
+  $createdMapping = $true
+  powershell -NoProfile -ExecutionPolicy Bypass `
+    -File U:\scripts\Install-AndroidDevelopment.ps1 `
+    -ProjectPath U:\
+} finally {
+  if ($createdMapping) {
+    subst U: /D
+  }
+}
+```
+
+スクリプトはビルド証跡とAPK内のApplication ID、version、API、ABIを先に検証します。その後、端末が1台で認証済み、API 25以上、`arm64-v8a`の場合だけAPKを上書きインストールし、アプリを起動します。端末0台、複数台、認証未完了、APK不一致、非対応端末、ADB timeoutではインストールしません。失敗時も自動アンインストールは行いません。
+
+証跡は`TestResults/AndroidDeviceEvidence.json`へ出力されます。ADB serialと個人情報は記録されません。実機スモーク項目と限定配布手順は[Android実機確認・限定配布仕様](docs/specifications/AndroidDistribution.md)を参照してください。
+
 ## 開発状況
 
-現在はスケルトンプロジェクトの段階です。ゲーム本編の実装に合わせて、実機での主要ゲームフロー確認と配布手順を追記します。
+Version 1のゲーム本編、BGM、ルール説明画面まで実装済みです。Android実機の完走確認と初版限定配布の検証を行います。

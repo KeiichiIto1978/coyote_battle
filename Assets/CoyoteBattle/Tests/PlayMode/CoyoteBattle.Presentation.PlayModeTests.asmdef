@@ -1,0 +1,14 @@
+{
+  "name": "CoyoteBattle.Presentation.PlayModeTests",
+  "rootNamespace": "CoyoteBattle.Tests.Presentation",
+  "references": [
+    "CoyoteBattle.Domain",
+    "CoyoteBattle.Application",
+    "CoyoteBattle.Presentation",
+    "UnityEngine.AudioModule"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false
+}

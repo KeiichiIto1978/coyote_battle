@@ -1,0 +1,10 @@
+{
+  "name": "CoyoteBattle.Presentation",
+  "rootNamespace": "CoyoteBattle.Presentation",
+  "references": [
+    "CoyoteBattle.Domain",
+    "CoyoteBattle.Application",
+    "UnityEngine.AudioModule"
+  ],
+  "autoReferenced": true
+}
