@@ -149,13 +149,16 @@ try
     {
         $gitProjectPath += '.'
     }
-    $commitSha = (& git -C $gitProjectPath rev-parse HEAD 2>$null | Select-Object -First 1).Trim()
-    if ($LASTEXITCODE -ne 0)
+    $commitShaOutput = & git -C $gitProjectPath rev-parse HEAD 2>$null
+    $commitShaExitCode = $LASTEXITCODE
+    $commitSha = ($commitShaOutput | Select-Object -First 1).Trim()
+    if ($commitShaExitCode -ne 0)
     {
         throw 'Could not determine the current commit SHA.'
     }
     & git -C $gitProjectPath diff-index --quiet HEAD --
-    if ($LASTEXITCODE -gt 1)
+    $worktreeExitCode = $LASTEXITCODE
+    if ($worktreeExitCode -gt 1)
     {
         throw 'Could not inspect the worktree state.'
     }
@@ -163,7 +166,7 @@ try
         -Evidence $buildEvidence `
         -ApkPath $resolvedApkPath `
         -CurrentCommitSha $commitSha `
-        -HasTrackedChanges ($LASTEXITCODE -eq 1)
+        -HasTrackedChanges ($worktreeExitCode -eq 1)
 
     $badgingOutput = Invoke-AndroidTool `
         -ExecutablePath $resolvedAaptPath `
