@@ -223,7 +223,7 @@ namespace CoyoteBattle.Presentation
             var avatar = new VisualElement { name = $"{participant.Id}-portrait" };
             avatar.style.width = Length.Percent(100);
             avatar.style.flexGrow = 1;
-            avatar.style.minHeight = 1;
+            avatar.style.minHeight = 80;
             SetBackground(avatar, AvatarResource(participant.Id));
             avatar.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
             avatar.style.backgroundRepeat = new BackgroundRepeat(Repeat.NoRepeat, Repeat.NoRepeat);
