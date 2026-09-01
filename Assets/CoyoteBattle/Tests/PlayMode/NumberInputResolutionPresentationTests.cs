@@ -115,7 +115,7 @@ namespace CoyoteBattle.Tests.Presentation
                         $"{resolution.x}x{resolution.y}: {inputValue.Length}文字"
                     );
                     Assert.That(
-                        textInput.contentRect.height,
+                        inputTarget.contentRect.height,
                         Is.GreaterThan(MeasureTextHeight(textInput)),
                         $"{resolution.x}x{resolution.y}: {inputValue.Length}文字の描画高さ "
                             + $"text={textInput.contentRect} container={inputTarget.contentRect}"
@@ -124,6 +124,11 @@ namespace CoyoteBattle.Tests.Presentation
                         textInput.style.overflow.value,
                         Is.EqualTo(Overflow.Visible),
                         $"{resolution.x}x{resolution.y}: 入力文字をクリップしない"
+                    );
+                    Assert.That(
+                        inputTarget.style.overflow.value,
+                        Is.EqualTo(Overflow.Visible),
+                        $"{resolution.x}x{resolution.y}: 入力コンテナで文字をクリップしない"
                     );
                 }
             }

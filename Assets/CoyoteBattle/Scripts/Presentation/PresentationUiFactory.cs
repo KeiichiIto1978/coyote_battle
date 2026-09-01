@@ -150,6 +150,8 @@ namespace CoyoteBattle.Presentation
             inputContainer.style.flexGrow = 1;
             inputContainer.style.minWidth = 0;
             inputContainer.style.height = 48;
+            inputContainer.style.paddingTop = inputContainer.style.paddingBottom = 0;
+            inputContainer.style.overflow = Overflow.Visible;
             textInput.style.flexGrow = 1;
             textInput.style.minWidth = 0;
             textInput.style.height = 48;
