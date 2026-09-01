@@ -117,8 +117,10 @@ try
     {
         $gitProjectPath += '.'
     }
-    $commitSha = (& git -C $gitProjectPath rev-parse HEAD 2>$null | Select-Object -First 1).Trim()
-    if ($LASTEXITCODE -ne 0 -or $commitSha -notmatch '^[0-9a-fA-F]{40}$')
+    $commitShaOutput = & git -C $gitProjectPath rev-parse HEAD 2>$null
+    $commitShaExitCode = $LASTEXITCODE
+    $commitSha = ($commitShaOutput | Select-Object -First 1).Trim()
+    if ($commitShaExitCode -ne 0 -or $commitSha -notmatch '^[0-9a-fA-F]{40}$')
     {
         throw 'Could not determine the current commit SHA.'
     }

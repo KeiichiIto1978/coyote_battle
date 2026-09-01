@@ -199,7 +199,9 @@ namespace CoyoteBattle.Presentation
             _npcRow = new VisualElement { name = "npc-row" };
             _npcRow.style.flexDirection = FlexDirection.Row;
             _npcRow.style.justifyContent = Justify.SpaceAround;
-            _npcRow.style.height = Length.Percent(47);
+            _npcRow.style.flexGrow = 1;
+            _npcRow.style.flexShrink = 1;
+            _npcRow.style.minHeight = 260;
             _battleMain.Add(_npcRow);
             var centerPanel = CreatePanel("declaration-panel");
             centerPanel.style.alignSelf = Align.Center;
@@ -282,7 +284,9 @@ namespace CoyoteBattle.Presentation
         {
             var row = new VisualElement { name = "user-area" };
             row.style.flexDirection = FlexDirection.Row;
-            row.style.flexGrow = 1;
+            row.style.height = 250;
+            row.style.flexGrow = 0;
+            row.style.flexShrink = 0;
             row.style.alignItems = Align.Center;
             row.style.justifyContent = Justify.Center;
             var userPanel = CreatePanel();

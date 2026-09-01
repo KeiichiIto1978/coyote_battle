@@ -80,6 +80,7 @@ namespace CoyoteBattle.Tests.Presentation
                 new Vector2Int(1280, 720),
                 new Vector2Int(1920, 1080),
                 new Vector2Int(2400, 1080),
+                new Vector2Int(2520, 1080),
             };
 
             foreach (var resolution in resolutions)
@@ -88,14 +89,7 @@ namespace CoyoteBattle.Tests.Presentation
                 yield return null;
                 Assert.That(GetRenderingResolution(), Is.EqualTo(resolution));
 
-                var horizontalInset = Mathf.RoundToInt(resolution.x * 0.05f);
-                var verticalInset = Mathf.RoundToInt(resolution.y * 0.03f);
-                var safeArea = new Rect(
-                    horizontalInset,
-                    verticalInset,
-                    resolution.x - (horizontalInset * 2),
-                    resolution.y - (verticalInset * 2)
-                );
+                var safeArea = CreateSafeArea(resolution);
                 SafeAreaStyleApplier.Apply(root, resolution.x, resolution.y, safeArea);
                 yield return null;
 
@@ -120,8 +114,44 @@ namespace CoyoteBattle.Tests.Presentation
                         Is.GreaterThan(MeasureTextWidth(textInput)),
                         $"{resolution.x}x{resolution.y}: {inputValue.Length}文字"
                     );
+                    Assert.That(
+                        inputTarget.contentRect.height,
+                        Is.GreaterThan(MeasureTextHeight(textInput)),
+                        $"{resolution.x}x{resolution.y}: {inputValue.Length}文字の描画高さ "
+                            + $"text={textInput.contentRect} container={inputTarget.contentRect}"
+                    );
+                    Assert.That(
+                        textInput.style.overflow.value,
+                        Is.EqualTo(Overflow.Visible),
+                        $"{resolution.x}x{resolution.y}: 入力文字をクリップしない"
+                    );
+                    Assert.That(
+                        inputTarget.style.overflow.value,
+                        Is.EqualTo(Overflow.Visible),
+                        $"{resolution.x}x{resolution.y}: 入力コンテナで文字をクリップしない"
+                    );
                 }
             }
+        }
+
+        /// <summary>
+        /// 再現端末では上端のシステム領域だけを除外し、既存解像度では従来の余白を返します。
+        /// </summary>
+        private static Rect CreateSafeArea(Vector2Int resolution)
+        {
+            if (resolution == new Vector2Int(2520, 1080))
+            {
+                return new Rect(0, 0, resolution.x, resolution.y - 52);
+            }
+
+            var horizontalInset = Mathf.RoundToInt(resolution.x * 0.05f);
+            var verticalInset = Mathf.RoundToInt(resolution.y * 0.03f);
+            return new Rect(
+                horizontalInset,
+                verticalInset,
+                resolution.x - (horizontalInset * 2),
+                resolution.y - (verticalInset * 2)
+            );
         }
 
         /// <summary>
@@ -222,6 +252,22 @@ namespace CoyoteBattle.Tests.Presentation
                     VisualElement.MeasureMode.Exactly
                 )
                 .x;
+        }
+
+        /// <summary>
+        /// 入力要素の現在のフォントと文字列から必要な描画高さを計測します。
+        /// </summary>
+        private static float MeasureTextHeight(TextElement textInput)
+        {
+            return textInput
+                .MeasureTextSize(
+                    textInput.text,
+                    textInput.resolvedStyle.width,
+                    VisualElement.MeasureMode.Exactly,
+                    0f,
+                    VisualElement.MeasureMode.Undefined
+                )
+                .y;
         }
 
         /// <summary>

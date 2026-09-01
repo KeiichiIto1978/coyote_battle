@@ -95,6 +95,7 @@ namespace CoyoteBattle.Tests.Presentation
                 new Vector2Int(1280, 720),
                 new Vector2Int(1920, 1080),
                 new Vector2Int(2400, 1080),
+                new Vector2Int(2520, 1080),
             };
             foreach (var resolution in resolutions)
             {
@@ -132,6 +133,17 @@ namespace CoyoteBattle.Tests.Presentation
         /// </summary>
         private static void ApplySafeArea(VisualElement root, Vector2Int resolution)
         {
+            if (resolution == new Vector2Int(2520, 1080))
+            {
+                SafeAreaStyleApplier.Apply(
+                    root,
+                    resolution.x,
+                    resolution.y,
+                    new Rect(0, 0, resolution.x, resolution.y - 52)
+                );
+                return;
+            }
+
             var horizontalInset = Mathf.RoundToInt(resolution.x * 0.05f);
             var verticalInset = Mathf.RoundToInt(resolution.y * 0.03f);
             SafeAreaStyleApplier.Apply(
@@ -155,10 +167,46 @@ namespace CoyoteBattle.Tests.Presentation
             var npcRow = root.Q<VisualElement>("npc-row");
             var declarationPanel = root.Q<VisualElement>("declaration-panel");
             var userArea = root.Q<VisualElement>("user-area");
+            var userPanel = root.Q<Label>("user-life").parent;
+            var controls = root.Q<VisualElement>("controls");
             var declaration = root.Q<Label>("declaration-label");
             var banner = root.Q<Label>("action-banner");
+            var minimumPortraitHeight = resolution.x >= 2400 ? 132f : 72f;
+            for (var index = 1; index <= 4; index++)
+            {
+                var portrait = root.Q<VisualElement>($"npc-{index}-portrait");
+                Assert.That(
+                    portrait.resolvedStyle.height,
+                    Is.GreaterThanOrEqualTo(minimumPortraitHeight),
+                    $"{resolution.x}x{resolution.y}: NPC {index} のキャラアイコンを横長画面では大きく保つ"
+                );
+            }
             Assert.That(npcRow.worldBound.Overlaps(declarationPanel.worldBound), Is.False);
             Assert.That(declarationPanel.worldBound.Overlaps(userArea.worldBound), Is.False);
+            Assert.That(
+                declarationPanel.worldBound.Overlaps(userPanel.worldBound),
+                Is.False,
+                $"{resolution.x}x{resolution.y}: 宣言パネルとユーザー情報"
+            );
+            Assert.That(
+                declarationPanel.worldBound.Overlaps(controls.worldBound),
+                Is.False,
+                $"{resolution.x}x{resolution.y}: 宣言パネルと入力操作"
+            );
+            Assert.That(
+                userArea.worldBound.Contains(userPanel.worldBound.min)
+                    && userArea.worldBound.Contains(userPanel.worldBound.max),
+                Is.True,
+                $"{resolution.x}x{resolution.y}: ユーザー情報を下部領域内に収める "
+                    + $"area={userArea.worldBound} panel={userPanel.worldBound}"
+            );
+            Assert.That(
+                userArea.worldBound.Contains(controls.worldBound.min)
+                    && userArea.worldBound.Contains(controls.worldBound.max),
+                Is.True,
+                $"{resolution.x}x{resolution.y}: 入力操作を下部領域内に収める "
+                    + $"area={userArea.worldBound} controls={controls.worldBound}"
+            );
             Assert.That(declaration.worldBound.Overlaps(banner.worldBound), Is.False);
             Assert.That(
                 declarationPanel.worldBound.Contains(banner.worldBound.min),
