@@ -168,12 +168,17 @@ try
     }
 
     $apkHash = (Get-FileHash -LiteralPath $apk.FullName -Algorithm SHA256).Hash.ToUpperInvariant()
-    [pscustomobject][ordered]@{
+    $buildEvidenceJson = [pscustomobject][ordered]@{
         BuiltAtUtc = [DateTime]::UtcNow.ToString('o')
         CommitSha = $commitSha.ToLowerInvariant()
         ApkSize = $apk.Length
         ApkSha256 = $apkHash
-    } | ConvertTo-Json | Set-Content -LiteralPath $buildEvidencePath -Encoding UTF8
+    } | ConvertTo-Json
+    [System.IO.File]::WriteAllText(
+        $buildEvidencePath,
+        $buildEvidenceJson,
+        (New-Object System.Text.UTF8Encoding($false))
+    )
 
     Write-Output "Android Development APK succeeded ($($apk.Length) bytes)."
     Write-Output "Artifact: $resolvedOutputPath"

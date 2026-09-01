@@ -14,6 +14,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $packageId = 'com.keiichiito.coyotebattle'
+$script:AndroidToolTimeoutSeconds = $AdbTimeoutSeconds
 
 function Resolve-ProjectPath
 {
@@ -78,7 +79,7 @@ function Invoke-AndroidTool
     $standardError = $process.StandardError.ReadToEndAsync()
     Wait-AndroidProcess `
         -Process $process `
-        -TimeoutMilliseconds ($AdbTimeoutSeconds * 1000) `
+        -TimeoutMilliseconds ($script:AndroidToolTimeoutSeconds * 1000) `
         -FailureMessage $FailureMessage
     $output = @($standardOutput.Result, $standardError.Result) |
         ForEach-Object { $_ -split "`r?`n" }
@@ -216,7 +217,7 @@ try
         -FailureMessage 'The installed application could not be launched.'
     Assert-AndroidLaunchOutput -Lines $launchOutput
 
-    $evidence = New-AndroidDeploymentEvidence `
+    $evidence = Get-AndroidDeploymentEvidence `
         -ApkPath $resolvedApkPath `
         -CommitSha $commitSha `
         -VersionName $versionNameMatch.Groups[1].Value `
@@ -233,7 +234,12 @@ try
     $resolvedEvidencePath = [System.IO.Path]::GetFullPath($EvidencePath)
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $resolvedEvidencePath) |
         Out-Null
-    $evidence | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $resolvedEvidencePath -Encoding UTF8
+    $evidenceJson = $evidence | ConvertTo-Json -Depth 4
+    [System.IO.File]::WriteAllText(
+        $resolvedEvidencePath,
+        $evidenceJson,
+        (New-Object System.Text.UTF8Encoding($false))
+    )
 
     Write-Output "Installed and launched $packageId $($evidence.VersionName) ($($evidence.VersionCode))."
     Write-Output "Device: $manufacturer $model / Android $androidVersion / API $apiLevel / $abi"
